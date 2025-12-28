@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Game Rewind UK</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: #000000;
+      background-image: url("background.png");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center center;
+      image-rendering: pixelated;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -50px;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at top, rgba(15, 23, 42, 0.7), transparent 65%),
+        radial-gradient(circle at bottom, rgba(15, 23, 42, 0.8), transparent 70%);
+      mix-blend-mode: multiply;
+    }
+    .app {
+      margin: 2rem 1rem;
+      max-width: 900px;
+      width: 100%;
+      background: #020617;
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
+      border: 1px solid #1f2937;
+      position: relative;
+      z-index: 1;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .logo {
+      max-width: 240px;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .home-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .home-btn:hover { background: #111827; }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.3rem;
+      align-items: flex-start;
+    }
+    .search-wrapper { position: relative; flex: 1 1 220px; }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      outline: none;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+    input[type="text"]::placeholder { color: #6b7280; }
+    input[type="text"]:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5);
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 0.3rem;
+      background: #020617;
+      border-radius: 0.75rem;
+      border: 1px solid #374151;
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.8);
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+    .suggestion-item {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.6);
+      color: #ffffff;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: rgba(55, 65, 81, 0.8); }
+    .suggestion-empty { padding: 0.4rem 0.9rem; font-size: 0.8rem; color: #e5e7eb; }
+
+    button {
+      padding: 0.8rem 1.4rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+
+    .console-choice-btn {
+      margin: 0.2rem 0;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .console-choice-btn:hover { background: #111827; }
+
+    .hint { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.8rem; }
+    .status { font-size: 0.9rem; color: #9ca3af; margin-bottom: 1rem; }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.1rem;
+      border: 1px solid #1f2937;
+      background:
+        radial-gradient(circle at top left, rgba(79, 70, 229, 0.22), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(236, 72, 153, 0.18), transparent 55%),
+        #020617;
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card > :not(.card-bg) { position: relative; z-index: 1; }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .card-header-main { display: flex; flex-direction: column; gap: 0.25rem; }
+    .card-title { font-size: 1.1rem; font-weight: 600; color: #ffffff !important; }
+    .card-subtitle { font-size: 0.9rem; color: #d1d5db !important; }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffffff !important;
+      margin: 0.75rem 0 0.25rem;
+      font-weight: 600;
+    }
+    .section-block {
+      margin-top: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(31, 41, 55, 0.8);
+    }
+
+    .section-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      columns: 2;
+      -webkit-columns: 2;
+      -moz-columns: 2;
+      column-gap: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .section-list li { margin: 0.15rem 0; color: #ffffff !important; }
+
+    .console-badge {
+      align-self: flex-start;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffffff !important;
+      background: rgba(15, 23, 42, 0.85);
+      white-space: nowrap;
+    }
+
+.section-list a.has-link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.section-list a.has-link:hover {
+  opacity: 0.85;
+}
+
+
+    .no-results { color: #ffffff !important; font-size: 0.9rem; margin-top: 0.5rem; }
+    .empty { color: #9ca3af; font-size: 0.88rem; }
+
+/* Force list text + markers to white everywhere */
+ul, ol, li { 
+  color: #ffffff !important;
+}
+li::marker {
+  color: #ffffff !important;
+}
+
+    .month-games-list {
+      columns: 3;
+      -webkit-columns: 3;
+      -moz-columns: 3;
+      column-gap: 1.5rem;
+    }
+    @media (max-width: 700px) { .month-games-list { columns: 1; } }
+
+    .clickable-game { cursor: pointer !important; text-decoration: none; color: #ffffff !important; }
+    .clickable-game:hover { text-decoration: underline; }
+
+    .section-more { margin-top: 0.25rem; font-size: 0.85rem; cursor: pointer; color: #ffffff !important; }
+    .section-more:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .app { padding: 1.25rem; }
+      button { width: 100%; }
+    }
+  
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin: 0.75rem 0 1.25rem;
+    }
+    .nav-link {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: rgba(2, 6, 23, 0.6);
+      color: #ffffff;
+      font-size: 0.85rem;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    .nav-link:hover {
+      background: #111827;
+    }
+
+    /* Make bullet/list text white everywhere */
+    li,
+    li a {
+      color: #ffffff !important;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header-row">
+      <img src="logo.png" alt="Game Rewind UK" class="logo">
+      <button type="button" id="home-button" class="home-btn">Home</button>
+    </div>
+
+    <div class="subtitle">
+      Search for a game and take yourself back to your time growing up in the UK.
+    </div>
+<form id="search-form">
+      <div class="search-wrapper">
+        <input type="text" id="game-input" placeholder="e.g. Super Mario World" autocomplete="off" required />
+        <div id="suggestions" class="suggestions"></div>
+      </div>
+      <button type="submit" id="search-button">Search</button>
+    </form>
+
+	<div class="nav-links">
+  	<a href="#" id="browse-by-date" class="nav-link">Browse by date</a>
+  	<a href="#" id="browse-by-console" class="nav-link">Browse by console</a>
+  	<a href="about.html" class="nav-link">About</a>
+	</div>
+    
+
+    <div class="status" id="status">Loading data from Google Sheets…</div>
+    <div class="results" id="results"></div>
+  </div>
+
+  <script>
+    const GAMES_URL  = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Games";
+    const CINEMA_URL = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Cinema";
+    const MUSIC_URL  = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Music";
+    const WWE_URL    = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/WWE";
+    const RENTAL_URL = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Rental";
+
+    let games = [];
+    let cinema = [];
+    let music = [];
+    let wwe = [];
+    let rental = [];
+    let isLoaded = false;
+    let uniqueGameTitles = [];
+
+    function parseMonthYear(raw) {
+      if (!raw) return { month: null, year: null };
+      const str = String(raw).replace(/\s+/g, " ").trim();
+      const match = str.match(/([A-Za-z]+)\s+(\d{4})/);
+      if (!match) return { month: null, year: null };
+
+      const monthName = match[1].toLowerCase();
+      const year = parseInt(match[2], 10);
+
+      const monthMap = {
+        january: 1, jan: 1,
+        february: 2, feb: 2,
+        march: 3, mar: 3,
+        april: 4, apr: 4,
+        may: 5,
+        june: 6, jun: 6,
+        july: 7, jul: 7,
+        august: 8, aug: 8,
+        september: 9, sept: 9, sep: 9,
+        october: 10, oct: 10,
+        november: 11, nov: 11,
+        december: 12, dec: 12
+      };
+
+      const month = monthMap[monthName] || null;
+      if (!month || !year) return { month: null, year: null };
+      return { month, year };
+    }
+
+    function monthNameFromNumber(n) {
+      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      return (!n || n < 1 || n > 12) ? "Unknown month" : months[n - 1];
+    }
+
+    async function fetchJsonArray(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch: " + res.status + " " + res.statusText);
+      return await res.json();
+    }
+
+    function parseGames(rows) {
+      return rows
+        .map(row => {
+          const { month, year } = parseMonthYear(row["UK Release Date"]);
+          return {
+            title: (row["Game Title"] || "").trim(),
+            console: (row["Console"] || "").trim(),
+            month,
+            year,
+            imageUrl: (row["Image URL"] || "").trim()
+          };
+        })
+        .filter(g => g.title && g.month && g.year);
+    }
+
+    function parseCinema(rows) {
+      return rows
+        .map(row => {
+          const { month, year } = parseMonthYear(row["UK Release Date (by Month)"]);
+          return { title: (row["Title"] || "").trim(), month, year };
+        })
+        .filter(m => m.title && m.month && m.year);
+    }
+
+    function parseRental(rows) {
+      const monthKeys = [
+        "UK Release Date (by Month)",
+        "UK Release Date",
+        "Month",
+        "Date",
+        "Release Month",
+        "Release Date"
+      ];
+      const titleKeys = ["Title", "Film", "Movie", "Name", "Event"];
+
+      return rows
+        .map(row => {
+          const monthRaw = monthKeys.map(k => row[k]).find(v => v !== undefined) || "";
+          const titleRaw = titleKeys.map(k => row[k]).find(v => v !== undefined) || "";
+          const { month, year } = parseMonthYear(monthRaw);
+          return { title: String(titleRaw || "").trim(), month, year };
+        })
+        .filter(r => r.title && r.month && r.year);
+    }
+
+    function parseMusic(rows) {
+      return rows
+        .map(row => {
+          const { month, year } = parseMonthYear(row["Month"]);
+          return { title: (row["Title"] || "").trim(), month, year };
+        })
+        .filter(s => s.title && s.month && s.year);
+    }
+
+    function parseWwe(rows) {
+      return rows
+        .map(row => {
+          const dateRaw = row["Date"] || row["DATE"] || row["date"] || "";
+          const eventRaw = row["Event"] || row["Event/PPV"] || row["PPV"] || row["Title"] || row["Event Name"] || "";
+          const { month, year } = parseMonthYear(dateRaw);
+          const urlRaw = row["URL"] || row["Url"] || row["url"] || row["YouTube URL"] || row["Youtube URL"] || row["YouTube"] || row["Youtube"] || row["Link"] || row["LINK"] || "";
+          return { title: eventRaw.trim(), month, year, url: String(urlRaw).trim() };
+        })
+        .filter(e => e.title && e.month && e.year);
+    }
+
+    const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
+    const MAX_SECTION_ITEMS = 20;
+    const MAX_MONTH_GAMES = 20;
+
+    function showConsoleChooser(matches, baseQuery) {
+      const statusEl = document.getElementById("status");
+      const resultsEl = document.getElementById("results");
+
+      statusEl.textContent = `Multiple versions found for "${baseQuery}". Choose a console.`;
+      resultsEl.innerHTML = "";
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = baseQuery;
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "card-subtitle";
+      subtitle.textContent = "Select a console to view that version.";
+
+      card.appendChild(title);
+      card.appendChild(subtitle);
+
+      const list = document.createElement("ul");
+
+      matches.forEach(game => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "console-choice-btn";
+        btn.textContent = game.console ? `${game.title} • ${game.console}` : game.title;
+
+        btn.addEventListener("click", () => {
+          renderResults([game], `${game.title} (${game.console || "Console"})`);
+          document.getElementById("game-input").value = game.title;
+          statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
+        });
+
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+
+      card.appendChild(list);
+      resultsEl.appendChild(card);
+    }
+
+    function renderOnThisMonth() {
+      if (!isLoaded) return;
+
+      const resultsEl = document.getElementById("results");
+      resultsEl.innerHTML = "";
+
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const monthName = monthNameFromNumber(currentMonth);
+
+      const header = document.createElement("div");
+      header.className = "card month-card";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = `This month: ${monthName}`;
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "card-subtitle";
+      subtitle.textContent = "Games released in this month across the years.";
+
+      header.appendChild(title);
+      header.appendChild(subtitle);
+      resultsEl.appendChild(header);
+
+      let anyGroups = false;
+
+      OFFSETS_YEARS.forEach(offset => {
+        const targetYear = currentYear - offset;
+        const group = games.filter(g => g.month === currentMonth && g.year === targetYear);
+        if (!group.length) return;
+
+        anyGroups = true;
+
+        const card = document.createElement("div");
+        card.className = "card month-card";
+
+        const cardHeader = document.createElement("div");
+        cardHeader.className = "card-header";
+
+        const left = document.createElement("div");
+        const yearTitle = document.createElement("div");
+        yearTitle.className = "card-title";
+        yearTitle.textContent = `${offset} years ago – ${monthName} ${targetYear}`;
+
+        const yearSubtitle = document.createElement("div");
+        yearSubtitle.className = "card-subtitle";
+        yearSubtitle.textContent = `${group.length} game` + (group.length === 1 ? "" : "s");
+
+        left.appendChild(yearTitle);
+        left.appendChild(yearSubtitle);
+        cardHeader.appendChild(left);
+        card.appendChild(cardHeader);
+
+        const list = document.createElement("ul");
+        list.className = "month-games-list";
+
+        function addGameRow(g) {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = "#";
+          link.className = "clickable-game";
+          link.textContent = g.console ? `${g.title} • ${g.console}` : g.title;
+
+          link.addEventListener("click", (event) => {
+            event.preventDefault();
+            const statusEl = document.getElementById("status");
+            const query = g.title;
+            const q = query.toLowerCase();
+
+            let matches = games.filter(game => game.title.toLowerCase() === q);
+            if (!matches.length) matches = games.filter(game => game.title.toLowerCase().includes(q));
+
+            if (!matches.length) {
+              statusEl.textContent = `No games found for "${query}".`;
+              renderResults([], query);
+              return;
+            }
+
+            const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
+            if (matches.length > 1 && consoles.length > 1) {
+              showConsoleChooser(matches, query);
+              return;
+            }
+
+            statusEl.textContent = `Found ${matches.length} matching game(s).`;
+            document.getElementById("game-input").value = g.title;
+            renderResults(matches, query);
+          });
+
+          li.appendChild(link);
+          list.appendChild(li);
+        }
+
+        group.slice(0, MAX_MONTH_GAMES).forEach(addGameRow);
+        card.appendChild(list);
+
+        if (group.length > MAX_MONTH_GAMES) {
+          const more = document.createElement("div");
+          more.className = "section-more";
+          more.textContent = `Show all ${group.length} games`;
+          more.addEventListener("click", () => {
+            list.innerHTML = "";
+            group.forEach(addGameRow);
+            more.remove();
+          });
+          card.appendChild(more);
+        }
+
+        resultsEl.appendChild(card);
+      });
+
+      if (!anyGroups) {
+        const msg = document.createElement("div");
+        msg.className = "no-results";
+        msg.textContent = `No games in your data for ${monthName} at 10, 15, 20, 25, 30, 35, or 40 years ago.`;
+        resultsEl.appendChild(msg);
+      }
+    }
+
+    
+
+    // ===== 4.75 Browse views (Date / Console) =====
+    function renderBrowseByDate() {
+      const statusEl = document.getElementById("status");
+      const resultsEl = document.getElementById("results");
+      resultsEl.innerHTML = "";
+
+      if (!isLoaded) {
+        statusEl.textContent = "Still loading data. Try again in a moment.";
+        return;
+      }
+
+      statusEl.textContent = "Browse games by month and year.";
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = "Browse by date";
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "card-subtitle";
+      subtitle.textContent = "Pick a month and year to see all games released then.";
+
+      card.appendChild(title);
+      card.appendChild(subtitle);
+
+      // Build month select
+      const monthSelect = document.createElement("select");
+      monthSelect.style.marginTop = "0.75rem";
+      monthSelect.style.width = "100%";
+      monthSelect.style.padding = "0.65rem 0.9rem";
+      monthSelect.style.borderRadius = "999px";
+      monthSelect.style.border = "1px solid #374151";
+      monthSelect.style.background = "#020617";
+      monthSelect.style.color = "#ffffff";
+      monthSelect.style.outline = "none";
+
+      for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement("option");
+        opt.value = String(m);
+        opt.textContent = monthNameFromNumber(m);
+        monthSelect.appendChild(opt);
+      }
+
+      // Build year select from data
+      const years = [...new Set(games.map(g => g.year))].sort((a, b) => b - a);
+      const yearSelect = document.createElement("select");
+      yearSelect.style.marginTop = "0.6rem";
+      yearSelect.style.width = "100%";
+      yearSelect.style.padding = "0.65rem 0.9rem";
+      yearSelect.style.borderRadius = "999px";
+      yearSelect.style.border = "1px solid #374151";
+      yearSelect.style.background = "#020617";
+      yearSelect.style.color = "#ffffff";
+      yearSelect.style.outline = "none";
+
+      years.forEach(y => {
+        const opt = document.createElement("option");
+        opt.value = String(y);
+        opt.textContent = String(y);
+        yearSelect.appendChild(opt);
+      });
+
+      const goBtn = document.createElement("button");
+      goBtn.type = "button";
+      goBtn.style.marginTop = "0.75rem";
+      goBtn.textContent = "Show games";
+
+      const listWrap = document.createElement("div");
+      listWrap.style.marginTop = "0.75rem";
+
+      const list = document.createElement("ul");
+      list.className = "month-games-list";
+      listWrap.appendChild(list);
+
+      function addGameRow(g) {
+        const li = document.createElement("li");
+
+        const link = document.createElement("a");
+        link.href = "#";
+        link.className = "clickable-game";
+        link.textContent = g.console ? `${g.title} • ${g.console}` : g.title;
+
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          const query = g.title;
+          const q = query.toLowerCase();
+
+          let matches = games.filter(game => game.title.toLowerCase() === q);
+          if (!matches.length) {
+            matches = games.filter(game => game.title.toLowerCase().includes(q));
+          }
+
+          if (!matches.length) {
+            statusEl.textContent = `No games found for "${query}".`;
+            renderResults(matches, query);
+            return;
+          }
+
+          const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
+
+          if (matches.length > 1 && consoles.length > 1) {
+            showConsoleChooser(matches, query);
+            return;
+          }
+
+          statusEl.textContent = `Found ${matches.length} matching game(s).`;
+          document.getElementById("game-input").value = g.title;
+          renderResults(matches, query);
+        });
+
+        li.appendChild(link);
+        list.appendChild(li);
+      }
+
+      function renderList() {
+        list.innerHTML = "";
+        const month = parseInt(monthSelect.value, 10);
+        const year = parseInt(yearSelect.value, 10);
+
+        const group = games
+          .filter(g => g.month === month && g.year === year)
+          .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+
+        if (!group.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = `No games found for ${monthNameFromNumber(month)} ${year}.`;
+          listWrap.innerHTML = "";
+          listWrap.appendChild(empty);
+          return;
+        }
+
+        listWrap.innerHTML = "";
+        listWrap.appendChild(list);
+        group.forEach(addGameRow);
+      }
+
+      goBtn.addEventListener("click", renderList);
+
+      card.appendChild(monthSelect);
+      card.appendChild(yearSelect);
+      card.appendChild(goBtn);
+      card.appendChild(listWrap);
+
+      resultsEl.appendChild(card);
+    }
+
+    function renderBrowseByConsole() {
+      const statusEl = document.getElementById("status");
+      const resultsEl = document.getElementById("results");
+      resultsEl.innerHTML = "";
+
+      if (!isLoaded) {
+        statusEl.textContent = "Still loading data. Try again in a moment.";
+        return;
+      }
+
+      statusEl.textContent = "Browse games by console.";
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = "Browse by console";
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "card-subtitle";
+      subtitle.textContent = "Pick a console to see all games for it.";
+
+      card.appendChild(title);
+      card.appendChild(subtitle);
+
+      const consoles = [...new Set(games.map(g => (g.console || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+
+      const consoleSelect = document.createElement("select");
+      consoleSelect.style.marginTop = "0.75rem";
+      consoleSelect.style.width = "100%";
+      consoleSelect.style.padding = "0.65rem 0.9rem";
+      consoleSelect.style.borderRadius = "999px";
+      consoleSelect.style.border = "1px solid #374151";
+      consoleSelect.style.background = "#020617";
+      consoleSelect.style.color = "#ffffff";
+      consoleSelect.style.outline = "none";
+
+      consoles.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        consoleSelect.appendChild(opt);
+      });
+
+      const goBtn = document.createElement("button");
+      goBtn.type = "button";
+      goBtn.style.marginTop = "0.75rem";
+      goBtn.textContent = "Show games";
+
+      const listWrap = document.createElement("div");
+      listWrap.style.marginTop = "0.75rem";
+
+      const list = document.createElement("ul");
+      list.className = "month-games-list";
+      listWrap.appendChild(list);
+
+      function addGameRow(g) {
+        const li = document.createElement("li");
+
+        const link = document.createElement("a");
+        link.href = "#";
+        link.className = "clickable-game";
+        link.textContent = `${g.title} • ${monthNameFromNumber(g.month)} ${g.year}`;
+
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          const query = g.title;
+          const q = query.toLowerCase();
+
+          let matches = games.filter(game => game.title.toLowerCase() === q);
+          if (!matches.length) {
+            matches = games.filter(game => game.title.toLowerCase().includes(q));
+          }
+
+          if (!matches.length) {
+            statusEl.textContent = `No games found for "${query}".`;
+            renderResults(matches, query);
+            return;
+          }
+
+          const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
+
+          if (matches.length > 1 && consoles.length > 1) {
+            showConsoleChooser(matches, query);
+            return;
+          }
+
+          statusEl.textContent = `Found ${matches.length} matching game(s).`;
+          document.getElementById("game-input").value = g.title;
+          renderResults(matches, query);
+        });
+
+        li.appendChild(link);
+        list.appendChild(li);
+      }
+
+      function renderList() {
+        list.innerHTML = "";
+        const selected = consoleSelect.value;
+
+        const group = games
+          .filter(g => (g.console || "").trim() === selected)
+          .sort((a, b) =>
+          (a.title || "").trim().localeCompare((b.title || "").trim(), undefined, { sensitivity: "base" })
+        );
+
+        if (!group.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = `No games found for ${selected}.`;
+          listWrap.innerHTML = "";
+          listWrap.appendChild(empty);
+          return;
+        }
+
+        listWrap.innerHTML = "";
+        listWrap.appendChild(list);
+        group.forEach(addGameRow);
+      }
+
+      goBtn.addEventListener("click", renderList);
+
+      card.appendChild(consoleSelect);
+      card.appendChild(goBtn);
+      card.appendChild(listWrap);
+
+      resultsEl.appendChild(card);
+    }
+
+async function loadAllData() {
+  const statusEl = document.getElementById("status");
+
+  try {
+    statusEl.textContent = "Loading data from all sheets…";
+
+    // Core data: must load
+    const [gamesRows, cinemaRows, musicRows, wweRows] = await Promise.all([
+      fetchJsonArray(GAMES_URL),
+      fetchJsonArray(CINEMA_URL),
+      fetchJsonArray(MUSIC_URL),
+      fetchJsonArray(WWE_URL)
+    ]);
+
+    // Optional data: should NOT break the app if it fails
+    let rentalRows = [];
+    try {
+      rentalRows = await fetchJsonArray(RENTAL_URL);
+    } catch (e) {
+      console.warn("Rental sheet failed to load (non-fatal):", e);
+      rentalRows = [];
+    }
+
+    games  = parseGames(gamesRows);
+    cinema = parseCinema(cinemaRows);
+    music  = parseMusic(musicRows);
+    wwe    = parseWwe(wweRows);
+    rental = parseRental(rentalRows);
+
+    uniqueGameTitles = [...new Set(games.map(g => g.title))].sort((a, b) => a.localeCompare(b));
+    isLoaded = true;
+
+    statusEl.textContent =
+      `Loaded ${games.length} games, ${cinema.length} films, ` +
+      `${music.length} tracks, ${wwe.length} Wrestling events` +
+      (rental.length ? `, ${rental.length} rental titles.` : ". (Rental not loaded)");
+
+    renderOnThisMonth();
+  } catch (err) {
+    console.error("loadAllData error:", err);
+    statusEl.textContent = "Error loading data. Check the sheet share settings and tab names, then reload.";
+  }
+}
+
+
+    const gameInput = document.getElementById("game-input");
+    const suggestionsEl = document.getElementById("suggestions");
+
+    function clearSuggestions() {
+      suggestionsEl.innerHTML = "";
+      suggestionsEl.style.display = "none";
+    }
+
+    function renderSuggestions(list, query) {
+      suggestionsEl.innerHTML = "";
+      if (!query || !list.length) { clearSuggestions(); return; }
+
+      suggestionsEl.style.display = "block";
+      list.forEach(title => {
+        const item = document.createElement("div");
+        item.className = "suggestion-item";
+        item.textContent = title;
+        item.addEventListener("mousedown", () => {
+          gameInput.value = title;
+          clearSuggestions();
+          document.getElementById("search-button").click();
+        });
+        suggestionsEl.appendChild(item);
+      });
+    }
+
+    function handleInputChange() {
+      const query = gameInput.value.trim().toLowerCase();
+      if (!isLoaded || !query) { clearSuggestions(); return; }
+
+      let matches = uniqueGameTitles.filter(title => title.toLowerCase().startsWith(query));
+      if (!matches.length) matches = uniqueGameTitles.filter(title => title.toLowerCase().includes(query));
+      renderSuggestions(matches.slice(0, 10), query);
+    }
+
+    gameInput.addEventListener("input", handleInputChange);
+    gameInput.addEventListener("blur", () => setTimeout(clearSuggestions, 150));
+
+    function handleSearch(event) {
+      event.preventDefault();
+      const statusEl = document.getElementById("status");
+      const query = gameInput.value.trim();
+
+      clearSuggestions();
+      if (!query) return;
+
+      if (!isLoaded) {
+        statusEl.textContent = "Still loading data. Try again in a moment.";
+        return;
+      }
+
+      const q = query.toLowerCase();
+      let matches = games.filter(g => g.title.toLowerCase() === q);
+      if (!matches.length) matches = games.filter(g => g.title.toLowerCase().includes(q));
+
+      if (!matches.length) {
+        statusEl.textContent = `No games found for "${query}".`;
+        renderResults([], query);
+        return;
+      }
+
+      const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
+      if (matches.length > 1 && consoles.length > 1) {
+        showConsoleChooser(matches, query);
+        return;
+      }
+
+      statusEl.textContent = `Found ${matches.length} matching game(s).`;
+      renderResults(matches, query);
+    }
+
+    function renderResults(matches, query) {
+      const resultsEl = document.getElementById("results");
+      resultsEl.innerHTML = "";
+
+      if (!matches.length) {
+        const div = document.createElement("div");
+        div.className = "no-results";
+        div.textContent = `No games found for "${query}". Check the spelling or your Games sheet.`;
+        resultsEl.appendChild(div);
+        return;
+      }
+
+      const first = matches[0];
+      const timeHeader = document.createElement("div");
+      timeHeader.className = "card";
+
+      const timeTitle = document.createElement("div");
+      timeTitle.className = "card-title";
+      timeTitle.textContent = `${monthNameFromNumber(first.month)} ${first.year}`;
+
+      const timeSubtitle = document.createElement("div");
+      timeSubtitle.className = "card-subtitle";
+      
+
+      timeHeader.appendChild(timeTitle);
+      timeHeader.appendChild(timeSubtitle);
+      resultsEl.appendChild(timeHeader);
+
+      matches.forEach(game => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        if (game.imageUrl) {
+          const bg = document.createElement("div");
+          bg.className = "card-bg";
+          bg.style.backgroundImage = `url('${game.imageUrl}')`;
+          card.appendChild(bg);
+        }
+
+        const header = document.createElement("div");
+        header.className = "card-header";
+
+        const main = document.createElement("div");
+        main.className = "card-header-main";
+
+        const title = document.createElement("div");
+        title.className = "card-title";
+        title.textContent = game.title;
+
+        const subtitle = document.createElement("div");
+        subtitle.className = "card-subtitle";
+        subtitle.textContent =
+          `${monthNameFromNumber(game.month)} ${game.year}` +
+          (game.console ? ` • ${game.console}` : "");
+
+        main.appendChild(title);
+        main.appendChild(subtitle);
+        header.appendChild(main);
+
+        if (game.console) {
+          const badge = document.createElement("div");
+          badge.className = "console-badge";
+          badge.textContent = game.console;
+          header.appendChild(badge);
+        }
+
+        card.appendChild(header);
+
+        const keyCinema = cinema.filter(c => c.year === game.year && c.month === game.month);
+        const keyMusic  = music.filter(m => m.year === game.year && m.month === game.month);
+        const keyWwe    = wwe.filter(w => w.year === game.year && w.month === game.month);
+
+        const keyRental = rental.filter(r => r.year === game.year && r.month === game.month);
+
+        function section(titleText, items, emptyText, linkMode, enableToggle = false) {
+          const block = document.createElement("div");
+          block.className = "section-block";
+
+          const t = document.createElement("div");
+          t.className = "section-title";
+          t.textContent = titleText;
+          block.appendChild(t);
+
+          if (!items.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty";
+            empty.textContent = emptyText;
+            block.appendChild(empty);
+            return block;
+          }
+
+          const ul = document.createElement("ul");
+          ul.className = "section-list";
+          block.appendChild(ul);
+
+          const more = document.createElement("div");
+          more.className = "section-more";
+          more.style.display = "none";
+          block.appendChild(more);
+
+          let expanded = false;
+
+          function renderList() {
+            ul.innerHTML = "";
+
+            const visible = (enableToggle && expanded) ? items : items.slice(0, MAX_SECTION_ITEMS);
+
+            visible.forEach(i => {
+              const li = document.createElement("li");
+
+              if (linkMode === "imdb") {
+                const link = document.createElement("a");
+                link.href = `https://www.imdb.com/find?q=${encodeURIComponent(i.title)}`;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = i.title;
+                link.className = "has-link";
+                li.appendChild(link);
+              } else if (linkMode === "youtube") {
+                const link = document.createElement("a");
+                link.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(i.title)}`;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = i.title;
+                link.className = "has-link";
+                li.appendChild(link);
+              } else if (i.url) {
+                const a = document.createElement("a");
+                a.href = i.url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.textContent = i.title;
+                a.className = "has-link";
+                a.style.color = "#ffffff";
+                li.appendChild(a);
+              } else {
+                li.textContent = i.title;
+              }
+
+              ul.appendChild(li);
+            });
+
+            if (more) {
+              if (!enableToggle || items.length <= MAX_SECTION_ITEMS) {
+                more.style.display = "none";
+              } else {
+                more.style.display = "block";
+                more.textContent = expanded ? `Show less` : `Show all ${items.length}`;
+              }
+            }
+          }
+
+          more.addEventListener("click", () => {
+            expanded = !expanded;
+            renderList();
+          });
+
+          renderList();
+          return block;
+        }
+
+
+card.appendChild(section(
+          keyCinema.length ? `In cinemas (${keyCinema.length})` : "In cinemas",
+          keyCinema,
+          "No cinema data for this month.",
+          "imdb",
+          true
+        ));
+card.appendChild(section(
+          keyRental.length ? `Available to rent (${keyRental.length})` : "Available to rent",
+          keyRental,
+          "No rental data for this month.",
+          "imdb",
+          true
+        ));
+card.appendChild(section(
+          keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
+          keyMusic,
+          "No music data for this month.",
+          "youtube"
+        ));
+
+        card.appendChild(section(
+          keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
+          keyWwe,
+          "No wrestling events for this month."
+        ));
+
+        resultsEl.appendChild(card);
+      });
+    }
+
+    function resetApp() {
+      const statusEl = document.getElementById("status");
+      const resultsEl = document.getElementById("results");
+
+      gameInput.value = "";
+      clearSuggestions();
+      resultsEl.innerHTML = "";
+
+      if (isLoaded) {
+        statusEl.textContent = "Type a game name or pick a game from this month below.";
+        renderOnThisMonth();
+      } else {
+        statusEl.textContent = "Loading data from Google Sheets…";
+      }
+
+      gameInput.focus();
+    }
+
+    document.getElementById("home-button").addEventListener("click", resetApp);
+
+    document.getElementById("browse-by-date").addEventListener("click", (e) => {
+      e.preventDefault();
+      clearSuggestions();
+      renderBrowseByDate();
+    });
+
+    document.getElementById("browse-by-console").addEventListener("click", (e) => {
+      e.preventDefault();
+      clearSuggestions();
+      renderBrowseByConsole();
+    });
+    document.getElementById("search-form").addEventListener("submit", handleSearch);
+
+    window.addEventListener("load", () => {
+      loadAllData();
+      document.getElementById("game-input").focus();
+    });
+
+    gameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("search-button").click();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>About • Game Rewind UK</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: #000000;
+      background-image: url("background.png");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center center;
+      image-rendering: pixelated;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -50px;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at top, rgba(15, 23, 42, 0.7), transparent 65%),
+        radial-gradient(circle at bottom, rgba(15, 23, 42, 0.8), transparent 70%);
+      mix-blend-mode: multiply;
+    }
+    .app {
+      margin: 2rem 1rem;
+      max-width: 900px;
+      width: 100%;
+      background: #020617;
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
+      border: 1px solid #1f2937;
+      position: relative;
+      z-index: 1;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .logo {
+      max-width: 240px;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .home-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .home-btn:hover { background: #111827; }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.3rem;
+      align-items: flex-start;
+    }
+    .search-wrapper { position: relative; flex: 1 1 220px; }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      outline: none;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+    input[type="text"]::placeholder { color: #6b7280; }
+    input[type="text"]:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5);
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 0.3rem;
+      background: #020617;
+      border-radius: 0.75rem;
+      border: 1px solid #374151;
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.8);
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+    .suggestion-item {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.6);
+      color: #ffffff;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: rgba(55, 65, 81, 0.8); }
+    .suggestion-empty { padding: 0.4rem 0.9rem; font-size: 0.8rem; color: #e5e7eb; }
+
+    button {
+      padding: 0.8rem 1.4rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+
+    .console-choice-btn {
+      margin: 0.2rem 0;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .console-choice-btn:hover { background: #111827; }
+
+    .hint { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.8rem; }
+    .status { font-size: 0.9rem; color: #9ca3af; margin-bottom: 1rem; }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.1rem;
+      border: 1px solid #1f2937;
+      background:
+        radial-gradient(circle at top left, rgba(79, 70, 229, 0.22), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(236, 72, 153, 0.18), transparent 55%),
+        #020617;
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card > :not(.card-bg) { position: relative; z-index: 1; }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .card-header-main { display: flex; flex-direction: column; gap: 0.25rem; }
+    .card-title { font-size: 1.1rem; font-weight: 600; color: #ffffff !important; }
+    .card-subtitle { font-size: 0.9rem; color: #d1d5db !important; }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffffff !important;
+      margin: 0.75rem 0 0.25rem;
+      font-weight: 600;
+    }
+    .section-block {
+      margin-top: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(31, 41, 55, 0.8);
+    }
+
+    .section-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      columns: 2;
+      -webkit-columns: 2;
+      -moz-columns: 2;
+      column-gap: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .section-list li { margin: 0.15rem 0; color: #ffffff !important; }
+
+    .console-badge {
+      align-self: flex-start;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffffff !important;
+      background: rgba(15, 23, 42, 0.85);
+      white-space: nowrap;
+    }
+
+    .no-results { color: #ffffff !important; font-size: 0.9rem; margin-top: 0.5rem; }
+    .empty { color: #9ca3af; font-size: 0.88rem; }
+
+/* Force list text + markers to white everywhere */
+ul, ol, li { 
+  color: #ffffff !important;
+}
+li::marker {
+  color: #ffffff !important;
+}
+
+    .month-games-list {
+      columns: 3;
+      -webkit-columns: 3;
+      -moz-columns: 3;
+      column-gap: 1.5rem;
+    }
+    @media (max-width: 700px) { .month-games-list { columns: 1; } }
+
+    .clickable-game { cursor: pointer !important; text-decoration: none; color: #ffffff !important; }
+    .clickable-game:hover { text-decoration: underline; }
+
+    .section-more { margin-top: 0.25rem; font-size: 0.85rem; cursor: pointer; color: #ffffff !important; }
+    .section-more:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .app { padding: 1.25rem; }
+      button { width: 100%; }
+    }
+  
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin: 0.75rem 0 1.25rem;
+    }
+    .nav-link {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: rgba(2, 6, 23, 0.6);
+      color: #ffffff;
+      font-size: 0.85rem;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    .nav-link:hover {
+      background: #111827;
+    }
+
+    /* Make bullet/list text white everywhere */
+    li,
+    li a {
+      color: #ffffff !important;
+    }
+
+    .about-card p {
+      color: #e5e7eb;
+      line-height: 1.6;
+      margin: 0.65rem 0;
+      font-size: 0.95rem;
+    }
+    .about-card a {
+      color: #ffffff;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .about-list {
+      margin: 0.5rem 0 0;
+      padding-left: 1.1rem;
+      color: #e5e7eb;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header-row">
+      <img src="logo.png" alt="Game Rewind UK" class="logo">
+      <button type="button" id="home-button" class="home-btn">Home</button>
+    </div>
+
+    <div class="subtitle">
+      What this is, where the data comes from, and how to use it.
+    </div>
+
+    <div class="card about-card">
+      <div class="card-title">About Game Rewind UK</div>
+      <div class="card-subtitle">A small nostalgia “time machine” built around gaming and UK culture.</div>
+
+      <div class="section-block">
+        <div class="section-title">What it does</div>
+        <p>Search for a game (or browse by date/console) and Game Rewind UK shows what else was happening in the same month and year:</p>
+        <ul class="about-list">
+          <li>Games released in the UK</li>
+          <li>Films in UK cinemas</li>
+	  <li>What was available to rent</li>
+          <li>Top 40 Singles that month</li>
+          <li>What wrestling event was happening that month (because wrestling and nostalgia just go hand in hand for me)</li>
+        </ul>
+      </div>
+
+      <div class="section-block">
+        <div class="section-title">Where the data comes from</div>
+        <p>The app loads its data from a Google Sheet. That means updates to the sheet appear in the app automatically. The majority of the data has been sourced by myself due to the UK's apparent bad practice at recording release dates.</p>
+      </div>
+
+      <div class="section-block">
+        <div class="section-title">How to use it</div>
+        <ul class="about-list">
+          <li><strong>Search</strong>: start typing a game title and pick from suggestions.</li>
+          <li><strong>Browse by date</strong>: choose a month + year and see all games from that release window.</li>
+          <li><strong>Browse by console</strong>: pick a console and view games A–Z.</li>
+          <li><strong>Multiple versions</strong>: if a game appears on more than one console, you’ll be asked to choose the one you meant.</li>
+        </ul>
+      </div>
+
+      <div class="section-block">
+        <div class="section-title">Notes</div>
+        <p>This is a personal project. Some months may have incomplete data, and titles may vary depending on how they’re written in the database. I have tried to be as true and accurate as I can be.</p>
+        <p>If you spot a mistake, or have some knowledge about a game title or similar then please contact me at gamerewinduk@gmail.com</p>
+      </div>
+
+      <div class="section-block">
+        <div class="section-title">Back to Game Rewind UK</div>
+        <p><a href="index.html">Return to the main search</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("home-button").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>
