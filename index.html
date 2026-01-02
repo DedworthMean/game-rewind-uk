@@ -343,6 +343,10 @@ li::marker {
     let isLoaded = false;
     let uniqueGameTitles = [];
 
+    const IGDB_PROXY = "https://igdb-cover-proxy.deanagacy.workers.dev";
+    const coverCache = new Map();
+
+
     function parseMonthYear(raw) {
       if (!raw) return { month: null, year: null };
       const str = String(raw).replace(/\s+/g, " ").trim();
@@ -371,6 +375,30 @@ li::marker {
       if (!month || !year) return { month: null, year: null };
       return { month, year };
     }
+
+async function getCoverUrlForGame(game) {
+  // 1) Prefer manual sheet image if present
+  if (game.imageUrl) return game.imageUrl;
+
+  const key = game.title;
+  if (coverCache.has(key)) return coverCache.get(key);
+
+  try {
+    const res = await fetch(
+      `${IGDB_PROXY}/?title=${encodeURIComponent(game.title)}`
+    );
+    if (!res.ok) throw new Error("Proxy error");
+
+    const data = await res.json();
+    const url = data.coverUrl || null;
+    coverCache.set(key, url);
+    return url;
+  } catch (err) {
+    console.warn("IGDB cover lookup failed:", err);
+    coverCache.set(key, null);
+    return null;
+  }
+}
 
     function monthNameFromNumber(n) {
       const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -1048,12 +1076,14 @@ async function loadAllData() {
         const card = document.createElement("div");
         card.className = "card";
 
-        if (game.imageUrl) {
-          const bg = document.createElement("div");
-          bg.className = "card-bg";
-          bg.style.backgroundImage = `url('${game.imageUrl}')`;
-          card.appendChild(bg);
-        }
+const bg = document.createElement("div");
+bg.className = "card-bg";
+card.appendChild(bg);
+
+getCoverUrlForGame(game).then((url) => {
+  if (url) bg.style.backgroundImage = `url('${url}')`;
+});
+
 
         const header = document.createElement("div");
         header.className = "card-header";
