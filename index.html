@@ -68,7 +68,9 @@
       margin: 2rem 1rem;
       max-width: 900px;
       width: 100%;
-      background: #020617;
+      background:
+        linear-gradient(180deg, rgba(10, 18, 38, 0.96), rgba(2, 6, 23, 0.98)),
+        #020617;
       border-radius: 1.25rem;
       padding: 1.75rem;
       box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
@@ -82,6 +84,13 @@
       justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 0.25rem;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .logo {
       max-width: 240px;
@@ -100,18 +109,110 @@
       white-space: nowrap;
     }
     .home-btn:hover { background: #111827; }
+    .top-link {
+      display: inline-block;
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .top-link:hover { background: #111827; }
 
-    .subtitle {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
+    .hero {
+      position: relative;
+      overflow: hidden;
+      margin: 0.75rem 0 1.35rem;
+      padding: 1.35rem;
+      border-radius: 1.35rem;
+      border: 1px solid rgba(96, 165, 250, 0.22);
+      background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.2), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(244, 114, 182, 0.16), transparent 32%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.72));
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -40px auto;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.9rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: rgba(15, 23, 42, 0.6);
+      color: #bfdbfe;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hero-title {
+      max-width: 11ch;
+      margin: 0;
+      color: #f8fafc;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+    .hero-copy {
+      max-width: 42rem;
+      margin: 0.95rem 0 0;
+      color: #cbd5e1;
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+    .hero-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin: 1.1rem 0 0;
+    }
+    .hero-pill {
+      padding: 0.45rem 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(15, 23, 42, 0.38);
+      color: #cbd5e1;
+      font-size: 0.84rem;
+    }
+    .search-panel {
+      margin-bottom: 1.3rem;
+      padding: 1rem;
+      border-radius: 1.1rem;
+      border: 1px solid rgba(75, 85, 99, 0.5);
+      background: rgba(2, 6, 23, 0.82);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .search-panel-title {
+      color: #f8fafc;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .search-panel-copy {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 0.85rem;
     }
 
     form {
       display: flex;
       flex-wrap: wrap;
       gap: 0.75rem;
-      margin-bottom: 1.3rem;
+      margin-bottom: 0;
       align-items: flex-start;
     }
     .search-wrapper { position: relative; flex: 1 1 220px; }
@@ -299,13 +400,16 @@ li::marker {
     @media (max-width: 600px) {
       .app { padding: 1.25rem; }
       button { width: 100%; }
+      .hero { padding: 1.1rem; }
+      .hero-copy { font-size: 0.94rem; }
+      .hero-pill { width: 100%; box-sizing: border-box; }
     }
   
     .nav-links {
       display: flex;
       flex-wrap: wrap;
       gap: 0.6rem;
-      margin: 0.75rem 0 1.25rem;
+      margin: 0.9rem 0 1.25rem;
     }
     .nav-link {
       display: inline-block;
@@ -335,24 +439,40 @@ li::marker {
   <div class="app">
     <div class="header-row">
       <img src="logo.png" alt="Game Rewind UK" class="logo">
-      <button type="button" id="home-button" class="home-btn">Home</button>
+      <div class="header-actions">
+        <a href="about.html" class="top-link">About</a>
+        <button type="button" id="home-button" class="home-btn">Home</button>
+      </div>
     </div>
 
-    <div class="subtitle">
-      Search for a game and take yourself back to your time growing up in the UK.
-    </div>
-<form id="search-form">
-      <div class="search-wrapper">
-        <input type="text" id="game-input" placeholder="e.g. Super Mario World" autocomplete="off" required />
-        <div id="suggestions" class="suggestions"></div>
+    <section class="hero">
+      <div class="hero-kicker">UK gaming nostalgia archive</div>
+      <h1 class="hero-title">Rewind to the month your game arrived.</h1>
+      <p class="hero-copy">
+        Search a game release and Game Rewind UK pulls you back into the same moment in British pop culture, from cinema listings and chart hits to video rentals and wrestling events.
+      </p>
+      <div class="hero-highlights">
+        <span class="hero-pill">Search by title</span>
+        <span class="hero-pill">Browse by month and year</span>
+        <span class="hero-pill">Jump between consoles</span>
+        <span class="hero-pill">Built around UK release history</span>
       </div>
-      <button type="submit" id="search-button">Search</button>
-    </form>
+    </section>
+    <div class="search-panel">
+      <div class="search-panel-title">Start with a game you grew up with</div>
+      <div class="search-panel-copy">Try a classic, a weekend rental, or the first console game you remember owning.</div>
+      <form id="search-form">
+        <div class="search-wrapper">
+          <input type="text" id="game-input" placeholder="e.g. Super Mario World" autocomplete="off" required />
+          <div id="suggestions" class="suggestions"></div>
+        </div>
+        <button type="submit" id="search-button">Search</button>
+      </form>
+    </div>
 
 	<div class="nav-links">
   	<a href="#" id="browse-by-date" class="nav-link">Browse by date</a>
   	<a href="#" id="browse-by-console" class="nav-link">Browse by console</a>
-  	<a href="about.html" class="nav-link">About</a>
 	</div>
     
 
