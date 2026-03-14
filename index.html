@@ -1306,12 +1306,7 @@ async function loadAllData() {
       timeTitle.className = "card-title";
       timeTitle.textContent = `${monthNameFromNumber(first.month)} ${first.year}`;
 
-      const timeSubtitle = document.createElement("div");
-      timeSubtitle.className = "card-subtitle";
-      
-
       timeHeader.appendChild(timeTitle);
-      timeHeader.appendChild(timeSubtitle);
       resultsEl.appendChild(timeHeader);
 
       matches.forEach(game => {

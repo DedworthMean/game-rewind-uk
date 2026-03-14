@@ -184,86 +184,6 @@ body {
       font-size: 0.84rem;
     }
 
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1.3rem;
-      align-items: flex-start;
-    }
-    .search-wrapper { position: relative; flex: 1 1 220px; }
-    input[type="text"] {
-      width: 100%;
-      padding: 0.8rem 1rem;
-      border-radius: 999px;
-      border: 1px solid #374151;
-      background: #020617;
-      color: #e5e7eb;
-      outline: none;
-      font-size: 0.95rem;
-      box-sizing: border-box;
-    }
-    input[type="text"]::placeholder { color: #6b7280; }
-    input[type="text"]:focus {
-      border-color: #6366f1;
-      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5);
-    }
-
-    .suggestions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      margin-top: 0.3rem;
-      background: #020617;
-      border-radius: 0.75rem;
-      border: 1px solid #374151;
-      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.8);
-      max-height: 260px;
-      overflow-y: auto;
-      z-index: 10;
-      display: none;
-    }
-    .suggestion-item {
-      padding: 0.45rem 0.9rem;
-      font-size: 0.9rem;
-      cursor: pointer;
-      border-bottom: 1px solid rgba(31, 41, 55, 0.6);
-      color: #ffffff;
-    }
-    .suggestion-item:last-child { border-bottom: none; }
-    .suggestion-item:hover { background: rgba(55, 65, 81, 0.8); }
-    .suggestion-empty { padding: 0.4rem 0.9rem; font-size: 0.8rem; color: #e5e7eb; }
-
-    button {
-      padding: 0.8rem 1.4rem;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      color: white;
-      font-size: 0.95rem;
-      white-space: nowrap;
-    }
-    button:disabled { opacity: 0.6; cursor: default; }
-
-    .console-choice-btn {
-      margin: 0.2rem 0;
-      padding: 0.35rem 0.8rem;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 0.85rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .console-choice-btn:hover { background: #111827; }
-
-    .hint { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.8rem; }
-    .status { font-size: 0.9rem; color: #9ca3af; margin-bottom: 1rem; }
-
     .card {
       position: relative;
       overflow: hidden;
@@ -276,26 +196,6 @@ body {
       padding: 1.25rem 1.4rem;
       margin-bottom: 1rem;
     }
-    .card-bg {
-      position: absolute;
-      inset: 0;
-      background-repeat: no-repeat;
-      background-size: contain;
-      background-position: center;
-      opacity: 0.18;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .card > :not(.card-bg) { position: relative; z-index: 1; }
-
-    .card-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .card-header-main { display: flex; flex-direction: column; gap: 0.25rem; }
     .card-title { font-size: 1.1rem; font-weight: 600; color: #ffffff !important; }
     .card-subtitle { font-size: 0.9rem; color: #d1d5db !important; }
 
@@ -312,56 +212,6 @@ body {
       padding-top: 0.5rem;
       border-top: 1px solid rgba(31, 41, 55, 0.8);
     }
-
-    .section-list {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-      columns: 2;
-      -webkit-columns: 2;
-      -moz-columns: 2;
-      column-gap: 1.5rem;
-      font-size: 0.9rem;
-    }
-    .section-list li { margin: 0.15rem 0; color: #ffffff !important; }
-
-    .console-badge {
-      align-self: flex-start;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #ffffff !important;
-      background: rgba(15, 23, 42, 0.85);
-      white-space: nowrap;
-    }
-
-    .no-results { color: #ffffff !important; font-size: 0.9rem; margin-top: 0.5rem; }
-    .empty { color: #9ca3af; font-size: 0.88rem; }
-
-/* Force list text + markers to white everywhere */
-ul, ol, li { 
-  color: #ffffff !important;
-}
-li::marker {
-  color: #ffffff !important;
-}
-
-    .month-games-list {
-      columns: 3;
-      -webkit-columns: 3;
-      -moz-columns: 3;
-      column-gap: 1.5rem;
-    }
-    @media (max-width: 700px) { .month-games-list { columns: 1; } }
-
-    .clickable-game { cursor: pointer !important; text-decoration: none; color: #ffffff !important; }
-    .clickable-game:hover { text-decoration: underline; }
-
-    .section-more { margin-top: 0.25rem; font-size: 0.85rem; cursor: pointer; color: #ffffff !important; }
-    .section-more:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
       .app {
@@ -387,7 +237,6 @@ li::marker {
         flex: 1 1 0;
         text-align: center;
       }
-      button { width: 100%; }
       .hero {
         margin: 0.4rem 0 1rem;
         padding: 1.1rem;
@@ -415,34 +264,6 @@ li::marker {
         font-size: 0.9rem;
       }
     }
-  
-    .nav-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      margin: 0.75rem 0 1.25rem;
-    }
-    .nav-link {
-      display: inline-block;
-      padding: 0.35rem 0.85rem;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
-      background: rgba(2, 6, 23, 0.6);
-      color: #ffffff;
-      font-size: 0.85rem;
-      text-decoration: none;
-      cursor: pointer;
-      user-select: none;
-    }
-    .nav-link:hover {
-      background: #111827;
-    }
-
-    /* Make bullet/list text white everywhere */
-    li,
-    li a {
-      color: #ffffff !important;
-    }
 
     .about-card p {
       color: #e5e7eb;
@@ -461,6 +282,9 @@ li::marker {
       color: #e5e7eb;
       line-height: 1.6;
       font-size: 0.95rem;
+    }
+    li::marker {
+      color: #ffffff;
     }
     .section-grid {
       display: grid;
