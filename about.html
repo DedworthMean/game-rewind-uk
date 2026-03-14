@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>About • Game Rewind UK</title>
+  <title>About - Game Rewind UK</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Learn what Game Rewind UK is, where its data comes from, and how to explore retro UK gaming nostalgia by date or console." />
   <link rel="canonical" href="https://gamerewind.uk/about.html" />
@@ -64,7 +64,9 @@ body {
       margin: 2rem 1rem;
       max-width: 900px;
       width: 100%;
-      background: #020617;
+      background:
+        linear-gradient(180deg, rgba(10, 18, 38, 0.96), rgba(2, 6, 23, 0.98)),
+        #020617;
       border-radius: 1.25rem;
       padding: 1.75rem;
       box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
@@ -78,6 +80,13 @@ body {
       justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 0.25rem;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .logo {
       max-width: 240px;
@@ -96,11 +105,83 @@ body {
       white-space: nowrap;
     }
     .home-btn:hover { background: #111827; }
-
-    .subtitle {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
+    .top-link {
+      display: inline-block;
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .top-link:hover { background: #111827; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      margin: 0.75rem 0 1.35rem;
+      padding: 1.35rem;
+      border-radius: 1.35rem;
+      border: 1px solid rgba(96, 165, 250, 0.22);
+      background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.2), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(244, 114, 182, 0.16), transparent 32%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.72));
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -40px auto;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.9rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: rgba(15, 23, 42, 0.6);
+      color: #bfdbfe;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hero-title {
+      max-width: 12ch;
+      margin: 0;
+      color: #f8fafc;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+    .hero-copy {
+      max-width: 42rem;
+      margin: 0.95rem 0 0;
+      color: #cbd5e1;
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+    .hero-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin: 1.1rem 0 0;
+    }
+    .hero-pill {
+      padding: 0.45rem 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(15, 23, 42, 0.38);
+      color: #cbd5e1;
+      font-size: 0.84rem;
     }
 
     form {
@@ -283,8 +364,56 @@ li::marker {
     .section-more:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
-      .app { padding: 1.25rem; }
+      .app {
+        margin: 1rem 0.75rem;
+        padding: 1rem;
+        border-radius: 1rem;
+      }
+      .header-row {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 0.6rem;
+      }
+      .logo {
+        max-width: 190px;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: stretch;
+        gap: 0.5rem;
+      }
+      .top-link,
+      .home-btn {
+        flex: 1 1 0;
+        text-align: center;
+      }
       button { width: 100%; }
+      .hero {
+        margin: 0.4rem 0 1rem;
+        padding: 1.1rem;
+        border-radius: 1rem;
+      }
+      .hero::after {
+        width: 120px;
+        height: 120px;
+      }
+      .hero-title {
+        max-width: none;
+        font-size: 2rem;
+      }
+      .hero-copy { font-size: 0.94rem; }
+      .hero-pill { width: 100%; box-sizing: border-box; }
+      .card {
+        padding: 1rem 1rem 1.05rem;
+      }
+      .card-title {
+        font-size: 1rem;
+      }
+      .card-subtitle,
+      .about-card p,
+      .about-list {
+        font-size: 0.9rem;
+      }
     }
   
     .nav-links {
@@ -333,6 +462,32 @@ li::marker {
       line-height: 1.6;
       font-size: 0.95rem;
     }
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .info-card {
+      border: 1px solid rgba(71, 85, 105, 0.45);
+      border-radius: 1rem;
+      padding: 1rem 1.05rem;
+      background: rgba(15, 23, 42, 0.52);
+    }
+    .info-card-title {
+      color: #f8fafc;
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin-bottom: 0.45rem;
+    }
+    .info-card p {
+      margin: 0;
+    }
+    @media (max-width: 700px) {
+      .section-grid {
+        grid-template-columns: 1fr;
+      }
+    }
 
   </style>
 </head>
@@ -340,50 +495,63 @@ li::marker {
   <div class="app">
     <div class="header-row">
       <img src="logo.png" alt="Game Rewind UK" class="logo">
-      <button type="button" id="home-button" class="home-btn">Home</button>
+      <div class="header-actions">
+        <a href="about.html" class="top-link">About</a>
+        <button type="button" id="home-button" class="home-btn">Home</button>
+      </div>
     </div>
 
-    <div class="subtitle">
-      What this is, where the data comes from, and how to use it.
-    </div>
+    <section class="hero">
+      <div class="hero-kicker">About the project</div>
+      <h1 class="hero-title">Why Game Rewind UK exists.</h1>
+      <p class="hero-copy">
+        This site is a nostalgia time machine built around UK release history. Search a game, browse by date, or jump through consoles and you can see the wider culture that surrounded it.
+      </p>
+      <div class="hero-highlights">
+        <span class="hero-pill">UK release focus</span>
+        <span class="hero-pill">Games, film, music, rentals, wrestling</span>
+        <span class="hero-pill">Google Sheet powered</span>
+        <span class="hero-pill">Personal archive project</span>
+      </div>
+    </section>
 
     <div class="card about-card">
       <div class="card-title">About Game Rewind UK</div>
-      <div class="card-subtitle">A small nostalgia “time machine” built around gaming and UK culture.</div>
+      <div class="card-subtitle">A small nostalgia time machine built around gaming and UK culture.</div>
 
       <div class="section-block">
         <div class="section-title">What it does</div>
-        <p>Search for a game (or browse by date/console) and Game Rewind UK shows what else was happening in the same month and year:</p>
+        <p>Search for a game, or browse by date or console, and Game Rewind UK shows what else was happening in the same month and year:</p>
         <ul class="about-list">
           <li>Games released in the UK</li>
           <li>Films in UK cinemas</li>
-	  <li>What was available to rent</li>
-          <li>Top 40 Singles that month</li>
-          <li>What wrestling event was happening that month (because wrestling and nostalgia just go hand in hand for me)</li>
+          <li>What was available to rent</li>
+          <li>Top 40 singles that month</li>
+          <li>What wrestling event was happening that month</li>
         </ul>
       </div>
 
-      <div class="section-block">
-        <div class="section-title">Where the data comes from</div>
-        <p>The app loads its data from a Google Sheet. That means updates to the sheet appear in the app automatically. The majority of the data has been sourced by myself due to the UK's apparent bad practice at recording release dates.</p>
-      </div>
-
-      <div class="section-block">
-        <div class="section-title">How to use it</div>
-        <ul class="about-list">
-          <li><strong>Search</strong>: start typing a game title and pick from suggestions.</li>
-          <li><strong>Browse by date</strong>: choose a month + year and see all games from that release window.</li>
-          <li><strong>Browse by console</strong>: pick a console and view games A–Z.</li>
-          <li><strong>Multiple versions</strong>: if a game appears on more than one console, you’ll be asked to choose the one you meant.</li>
-        </ul>
+      <div class="section-grid">
+        <div class="info-card">
+          <div class="info-card-title">Where the data comes from</div>
+          <p>The app loads its data from a Google Sheet, so updates to the sheet appear in the app automatically. A lot of the release information has been sourced manually because UK dates are often inconsistently recorded.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">How to use it</div>
+          <ul class="about-list">
+            <li><strong>Search</strong>: start typing a game title and pick from suggestions.</li>
+            <li><strong>Browse by date</strong>: choose a month and year to see that release window.</li>
+            <li><strong>Browse by console</strong>: pick a console and view games A-Z.</li>
+            <li><strong>Multiple versions</strong>: if a game appears on more than one console, you'll be asked to choose the one you meant.</li>
+          </ul>
+        </div>
       </div>
 
       <div class="section-block">
         <div class="section-title">Notes</div>
-        <p>This is a personal project. Some months may have incomplete data, and titles may vary depending on how they’re written in the database. I have tried to be as true and accurate as I can be.</p>
-        <p>If you spot a mistake, or have some knowledge about a game title or similar then please contact me at <a href="mailto:gamerewinduk@gmail.com">gamerewinduk@gmail.com</a>
-</p>
-	<p>Game cover images provided by IGDB.</p>
+        <p>This is a personal project. Some months may have incomplete data, and titles may vary depending on how they're written in the database. I have tried to be as true and accurate as I can be.</p>
+        <p>If you spot a mistake, or have some knowledge about a game title or similar then please contact me at <a href="mailto:gamerewinduk@gmail.com">gamerewinduk@gmail.com</a></p>
+        <p>Game cover images provided by IGDB.</p>
       </div>
 
       <div class="section-block">
