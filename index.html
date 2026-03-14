@@ -499,6 +499,9 @@ li::marker {
     .nav-link:hover {
       background: #111827;
     }
+    .is-hidden {
+      display: none !important;
+    }
 
     /* Make bullet/list text white everywhere */
     li,
@@ -518,7 +521,7 @@ li::marker {
       </div>
     </div>
 
-    <section class="hero">
+    <section class="hero" id="landing-hero">
       <div class="hero-kicker">UK gaming nostalgia archive</div>
       <h1 class="hero-title">Rewind to the month your game arrived.</h1>
       <p class="hero-copy">
@@ -531,7 +534,7 @@ li::marker {
         <span class="hero-pill">Built around UK release history</span>
       </div>
     </section>
-    <div class="search-panel">
+    <div class="search-panel" id="search-panel">
       <div class="search-panel-title">Start with a game you grew up with</div>
       <div class="search-panel-copy">Try a classic, a weekend rental, or the first console game you remember owning.</div>
       <form id="search-form">
@@ -706,9 +709,19 @@ async function getCoverUrlForGame(game) {
     const MAX_SECTION_ITEMS = 20;
     const MAX_MONTH_GAMES = 20;
 
+    function setLandingChromeVisible(visible) {
+      const heroEl = document.getElementById("landing-hero");
+      const searchPanelEl = document.getElementById("search-panel");
+      if (!heroEl || !searchPanelEl) return;
+
+      heroEl.classList.toggle("is-hidden", !visible);
+      searchPanelEl.classList.toggle("is-hidden", !visible);
+    }
+
     function showConsoleChooser(matches, baseQuery) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
+      setLandingChromeVisible(false);
 
       statusEl.textContent = `Multiple versions found for "${baseQuery}". Choose a console.`;
       resultsEl.innerHTML = "";
@@ -754,6 +767,7 @@ async function getCoverUrlForGame(game) {
       if (!isLoaded) return;
 
       const resultsEl = document.getElementById("results");
+      setLandingChromeVisible(true);
       resultsEl.innerHTML = "";
 
       const now = new Date();
@@ -877,6 +891,7 @@ async function getCoverUrlForGame(game) {
     function renderBrowseByDate() {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
+      setLandingChromeVisible(false);
       resultsEl.innerHTML = "";
 
       if (!isLoaded) {
@@ -1025,6 +1040,7 @@ async function getCoverUrlForGame(game) {
     function renderBrowseByConsole() {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
+      setLandingChromeVisible(false);
       resultsEl.innerHTML = "";
 
       if (!isLoaded) {
@@ -1271,6 +1287,7 @@ async function loadAllData() {
 
     function renderResults(matches, query) {
       const resultsEl = document.getElementById("results");
+      setLandingChromeVisible(false);
       resultsEl.innerHTML = "";
 
       if (!matches.length) {
@@ -1471,6 +1488,7 @@ card.appendChild(section(
       gameInput.value = "";
       clearSuggestions();
       resultsEl.innerHTML = "";
+      setLandingChromeVisible(true);
 
       if (isLoaded) {
         statusEl.textContent = "Type a game name or pick a game from this month below.";
