@@ -163,6 +163,89 @@
       margin-bottom: 0.5rem;
     }
     .card-header-main { display: flex; flex-direction: column; gap: 0.25rem; }
+    .release-summary {
+      padding: 1rem 1.1rem;
+      border-radius: 1.1rem;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      background:
+        linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)),
+        #020617;
+    }
+    .release-summary-line {
+      color: #f8fafc;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .retro-weekend-card {
+      background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(244, 114, 182, 0.14), transparent 35%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.82));
+    }
+    .retro-weekend-kicker {
+      display: inline-flex;
+      margin-bottom: 0.5rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: rgba(15, 23, 42, 0.52);
+      color: #bfdbfe;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .retro-weekend-title {
+      color: #f8fafc;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .retro-weekend-copy {
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin-bottom: 0.9rem;
+    }
+    .retro-weekend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 180px));
+      justify-content: start;
+      gap: 0.85rem;
+    }
+    .retro-weekend-item {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+    .retro-weekend-thumb {
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      border-radius: 0.95rem;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: rgba(2, 6, 23, 0.85);
+      margin-bottom: 0.55rem;
+    }
+    .retro-weekend-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .retro-weekend-label {
+      color: #bfdbfe;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.22rem;
+    }
+    .retro-weekend-name {
+      color: #ffffff;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
     .section-list {
       list-style: none;
       padding-left: 0;
@@ -243,6 +326,7 @@ li::marker {
       input[type="text"] {
         font-size: 16px;
       }
+      .release-summary-line,
       .card-subtitle,
       .status,
       .no-results,
@@ -302,8 +386,8 @@ li::marker {
     <div class="header-row">
       <img src="logo.png" alt="Game Rewind UK" class="logo">
       <div class="header-actions">
+        <button type="button" id="home-button" class="home-btn" aria-current="page">Home</button>
         <a href="about.html" class="top-link">About</a>
-        <button type="button" id="home-button" class="home-btn">Home</button>
       </div>
     </div>
 
@@ -342,155 +426,25 @@ li::marker {
     <div class="results" id="results"></div>
   </div>
 
+  <script src="game-rewind-data.js"></script>
   <script>
-    const GAMES_URL  = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Games";
-    const CINEMA_URL = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Cinema";
-    const MUSIC_URL  = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Music";
-    const WWE_URL    = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/WWE";
-    const RENTAL_URL = "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Rental";
+    const {
+      filterEntriesByMonthYear,
+      findGameMatches,
+      getCoverUrlForGame,
+      getUniqueGameTitles,
+      loadAllData,
+      monthNameFromNumber
+    } = window.GameRewindData;
 
     let games = [];
     let cinema = [];
     let music = [];
     let wwe = [];
     let rental = [];
+    let retroWeekend = [];
     let isLoaded = false;
     let uniqueGameTitles = [];
-
-    const IGDB_PROXY = "https://igdb-cover-proxy.deanagacy.workers.dev";
-    const coverCache = new Map();
-
-
-    function parseMonthYear(raw) {
-      if (!raw) return { month: null, year: null };
-      const str = String(raw).replace(/\s+/g, " ").trim();
-      const match = str.match(/([A-Za-z]+)\s+(\d{4})/);
-      if (!match) return { month: null, year: null };
-
-      const monthName = match[1].toLowerCase();
-      const year = parseInt(match[2], 10);
-
-      const monthMap = {
-        january: 1, jan: 1,
-        february: 2, feb: 2,
-        march: 3, mar: 3,
-        april: 4, apr: 4,
-        may: 5,
-        june: 6, jun: 6,
-        july: 7, jul: 7,
-        august: 8, aug: 8,
-        september: 9, sept: 9, sep: 9,
-        october: 10, oct: 10,
-        november: 11, nov: 11,
-        december: 12, dec: 12
-      };
-
-      const month = monthMap[monthName] || null;
-      if (!month || !year) return { month: null, year: null };
-      return { month, year };
-    }
-
-async function getCoverUrlForGame(game) {
-  // 1) Prefer manual sheet image if present
-  if (game.imageUrl) return game.imageUrl;
-
-  const key = game.title;
-  if (coverCache.has(key)) return coverCache.get(key);
-
-  try {
-    const res = await fetch(
-      `${IGDB_PROXY}/?title=${encodeURIComponent(game.title)}`
-    );
-    if (!res.ok) throw new Error("Proxy error");
-
-    const data = await res.json();
-    const url = data.coverUrl || null;
-    coverCache.set(key, url);
-    return url;
-  } catch (err) {
-    console.warn("IGDB cover lookup failed:", err);
-    coverCache.set(key, null);
-    return null;
-  }
-}
-
-    function monthNameFromNumber(n) {
-      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      return (!n || n < 1 || n > 12) ? "Unknown month" : months[n - 1];
-    }
-
-    async function fetchJsonArray(url) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch: " + res.status + " " + res.statusText);
-      return await res.json();
-    }
-
-    function parseGames(rows) {
-      return rows
-        .map(row => {
-          const { month, year } = parseMonthYear(row["UK Release Date"]);
-          return {
-            title: (row["Game Title"] || "").trim(),
-            console: (row["Console"] || "").trim(),
-            month,
-            year,
-            imageUrl: (row["Image URL"] || "").trim()
-          };
-        })
-        .filter(g => g.title && g.month && g.year);
-    }
-
-    function parseCinema(rows) {
-      return rows
-        .map(row => {
-          const { month, year } = parseMonthYear(row["UK Release Date (by Month)"]);
-          return { title: (row["Title"] || "").trim(), month, year };
-        })
-        .filter(m => m.title && m.month && m.year);
-    }
-
-    function parseRental(rows) {
-      const monthKeys = [
-        "UK Release Date (by Month)",
-        "UK Release Date",
-        "Month",
-        "Date",
-        "Release Month",
-        "Release Date"
-      ];
-      const titleKeys = ["Title", "Film", "Movie", "Name", "Event"];
-
-      return rows
-        .map(row => {
-          const monthRaw = monthKeys.map(k => row[k]).find(v => v !== undefined) || "";
-          const titleRaw = titleKeys.map(k => row[k]).find(v => v !== undefined) || "";
-          const { month, year } = parseMonthYear(monthRaw);
-          return { title: String(titleRaw || "").trim(), month, year };
-        })
-        .filter(r => r.title && r.month && r.year);
-    }
-
-    function parseMusic(rows) {
-      return rows
-        .map(row => {
-          const { month, year } = parseMonthYear(row["Month"]);
-          return { title: (row["Title"] || "").trim(), month, year };
-        })
-        .filter(s => s.title && s.month && s.year);
-    }
-
-    function parseWwe(rows) {
-      return rows
-        .map(row => {
-          const dateRaw = row["Date"] || row["DATE"] || row["date"] || "";
-          const eventRaw = row["Event"] || row["Event/PPV"] || row["PPV"] || row["Title"] || row["Event Name"] || "";
-          const { month, year } = parseMonthYear(dateRaw);
-          const urlRaw = row["URL"] || row["Url"] || row["url"] || row["YouTube URL"] || row["Youtube URL"] || row["YouTube"] || row["Youtube"] || row["Link"] || row["LINK"] || "";
-          return { title: eventRaw.trim(), month, year, url: String(urlRaw).trim() };
-        })
-        .filter(e => e.title && e.month && e.year);
-    }
-
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
     const MAX_SECTION_ITEMS = 20;
     const MAX_MONTH_GAMES = 20;
@@ -533,7 +487,7 @@ async function getCoverUrlForGame(game) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "console-choice-btn";
-        btn.textContent = game.console ? `${game.title} • ${game.console}` : game.title;
+        btn.textContent = game.console ? `${game.title} - ${game.console}` : game.title;
 
         btn.addEventListener("click", () => {
           renderResults([game], `${game.title} (${game.console || "Console"})`);
@@ -547,6 +501,40 @@ async function getCoverUrlForGame(game) {
 
       card.appendChild(list);
       resultsEl.appendChild(card);
+    }
+
+    function handleGameSelection(query, { populateInput = false } = {}) {
+      const statusEl = document.getElementById("status");
+      const matches = findGameMatches(games, query);
+
+      if (!matches.length) {
+        statusEl.textContent = `No games found for "${query}".`;
+        renderResults([], query);
+        return;
+      }
+
+      const consoles = [...new Set(matches.map((match) => (match.console || "").trim()))];
+      if (matches.length > 1 && consoles.length > 1) {
+        showConsoleChooser(matches, query);
+        return;
+      }
+
+      if (populateInput) {
+        document.getElementById("game-input").value = matches[0].title;
+      }
+
+      statusEl.textContent = `Found ${matches.length} matching game(s).`;
+      renderResults(matches, query);
+    }
+
+    function showSpecificGame(game, { populateInput = false } = {}) {
+      const statusEl = document.getElementById("status");
+      if (populateInput) {
+        document.getElementById("game-input").value = game.title;
+      }
+
+      statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
+      renderResults([game], game.title);
     }
 
     function renderOnThisMonth() {
@@ -617,28 +605,7 @@ async function getCoverUrlForGame(game) {
 
           link.addEventListener("click", (event) => {
             event.preventDefault();
-            const statusEl = document.getElementById("status");
-            const query = g.title;
-            const q = query.toLowerCase();
-
-            let matches = games.filter(game => game.title.toLowerCase() === q);
-            if (!matches.length) matches = games.filter(game => game.title.toLowerCase().includes(q));
-
-            if (!matches.length) {
-              statusEl.textContent = `No games found for "${query}".`;
-              renderResults([], query);
-              return;
-            }
-
-            const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
-            if (matches.length > 1 && consoles.length > 1) {
-              showConsoleChooser(matches, query);
-              return;
-            }
-
-            statusEl.textContent = `Found ${matches.length} matching game(s).`;
-            document.getElementById("game-input").value = g.title;
-            renderResults(matches, query);
+            showSpecificGame(g, { populateInput: true });
           });
 
           li.appendChild(link);
@@ -760,30 +727,7 @@ async function getCoverUrlForGame(game) {
 
         link.addEventListener("click", (event) => {
           event.preventDefault();
-          const query = g.title;
-          const q = query.toLowerCase();
-
-          let matches = games.filter(game => game.title.toLowerCase() === q);
-          if (!matches.length) {
-            matches = games.filter(game => game.title.toLowerCase().includes(q));
-          }
-
-          if (!matches.length) {
-            statusEl.textContent = `No games found for "${query}".`;
-            renderResults(matches, query);
-            return;
-          }
-
-          const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
-
-          if (matches.length > 1 && consoles.length > 1) {
-            showConsoleChooser(matches, query);
-            return;
-          }
-
-          statusEl.textContent = `Found ${matches.length} matching game(s).`;
-          document.getElementById("game-input").value = g.title;
-          renderResults(matches, query);
+          showSpecificGame(g, { populateInput: true });
         });
 
         li.appendChild(link);
@@ -892,30 +836,7 @@ async function getCoverUrlForGame(game) {
 
         link.addEventListener("click", (event) => {
           event.preventDefault();
-          const query = g.title;
-          const q = query.toLowerCase();
-
-          let matches = games.filter(game => game.title.toLowerCase() === q);
-          if (!matches.length) {
-            matches = games.filter(game => game.title.toLowerCase().includes(q));
-          }
-
-          if (!matches.length) {
-            statusEl.textContent = `No games found for "${query}".`;
-            renderResults(matches, query);
-            return;
-          }
-
-          const consoles = [...new Set(matches.map(m => (m.console || "").trim()))];
-
-          if (matches.length > 1 && consoles.length > 1) {
-            showConsoleChooser(matches, query);
-            return;
-          }
-
-          statusEl.textContent = `Found ${matches.length} matching game(s).`;
-          document.getElementById("game-input").value = g.title;
-          renderResults(matches, query);
+          showSpecificGame(g, { populateInput: true });
         });
 
         li.appendChild(link);
@@ -955,49 +876,33 @@ async function getCoverUrlForGame(game) {
       resultsEl.appendChild(card);
     }
 
-async function loadAllData() {
-  const statusEl = document.getElementById("status");
+    async function loadDataIntoApp() {
+      const statusEl = document.getElementById("status");
 
-  try {
-    statusEl.textContent = "Loading data from all sheets…";
+      try {
+        statusEl.textContent = "Loading data from all sheets...";
 
-    // Core data: must load
-    const [gamesRows, cinemaRows, musicRows, wweRows] = await Promise.all([
-      fetchJsonArray(GAMES_URL),
-      fetchJsonArray(CINEMA_URL),
-      fetchJsonArray(MUSIC_URL),
-      fetchJsonArray(WWE_URL)
-    ]);
+        const data = await loadAllData();
+        games = data.games;
+        cinema = data.cinema;
+        music = data.music;
+        wwe = data.wwe;
+        rental = data.rental;
+        retroWeekend = data.retroWeekend;
+        uniqueGameTitles = getUniqueGameTitles(games);
+        isLoaded = true;
 
-    // Optional data: should NOT break the app if it fails
-    let rentalRows = [];
-    try {
-      rentalRows = await fetchJsonArray(RENTAL_URL);
-    } catch (e) {
-      console.warn("Rental sheet failed to load (non-fatal):", e);
-      rentalRows = [];
+        statusEl.textContent =
+          `Loaded ${data.counts.games} games, ${data.counts.cinema} films, ` +
+          `${data.counts.music} tracks, ${data.counts.wwe} wrestling events` +
+          (data.rentalLoaded ? `, ${data.counts.rental} rental titles.` : ". (Rental not loaded)");
+
+        renderOnThisMonth();
+      } catch (err) {
+        console.error("loadAllData error:", err);
+        statusEl.textContent = "Error loading data. Check the sheet share settings and tab names, then reload.";
+      }
     }
-
-    games  = parseGames(gamesRows);
-    cinema = parseCinema(cinemaRows);
-    music  = parseMusic(musicRows);
-    wwe    = parseWwe(wweRows);
-    rental = parseRental(rentalRows);
-
-    uniqueGameTitles = [...new Set(games.map(g => g.title))].sort((a, b) => a.localeCompare(b));
-    isLoaded = true;
-
-    statusEl.textContent =
-      `Loaded ${games.length} games, ${cinema.length} films, ` +
-      `${music.length} tracks, ${wwe.length} Wrestling events` +
-      (rental.length ? `, ${rental.length} rental titles.` : ". (Rental not loaded)");
-
-    renderOnThisMonth();
-  } catch (err) {
-    console.error("loadAllData error:", err);
-    statusEl.textContent = "Error loading data. Check the sheet share settings and tab names, then reload.";
-  }
-}
 
 
     const gameInput = document.getElementById("game-input");
@@ -1051,9 +956,7 @@ async function loadAllData() {
         return;
       }
 
-      const q = query.toLowerCase();
-      let matches = games.filter(g => g.title.toLowerCase() === q);
-      if (!matches.length) matches = games.filter(g => g.title.toLowerCase().includes(q));
+      const matches = findGameMatches(games, query);
 
       if (!matches.length) {
         statusEl.textContent = `No games found for "${query}".`;
@@ -1071,6 +974,115 @@ async function loadAllData() {
       renderResults(matches, query);
     }
 
+    function getRetroWeekendItems(game) {
+      const items = [];
+
+      const entry = retroWeekend.find((item) => item.month === game.month && item.year === game.year);
+      if (!entry) return items;
+
+      return items.concat([
+        { label: "Cinema", title: entry.cinemaTitle, imageUrl: entry.cinemaImageUrl },
+        { label: "Rental", title: entry.rentalTitle, imageUrl: entry.rentalImageUrl },
+        { label: "Wrestling", title: entry.wweTitle, imageUrl: entry.wweImageUrl },
+        { label: "Cartoon", title: entry.cartoonsTitle, imageUrl: entry.cartoonsImageUrl }
+      ].filter((item) => item.imageUrl));
+    }
+
+    function createRetroWeekendTile(item, grid, card) {
+      const tile = document.createElement("a");
+      tile.className = "retro-weekend-item";
+      tile.href = item.imageUrl;
+      tile.target = "_blank";
+      tile.rel = "noopener noreferrer";
+
+      const thumb = document.createElement("div");
+      thumb.className = "retro-weekend-thumb";
+
+      const image = document.createElement("img");
+      image.src = item.imageUrl;
+      image.alt = item.title ? `${item.label}: ${item.title}` : `${item.label} image`;
+      image.loading = "lazy";
+      image.referrerPolicy = "no-referrer";
+      image.addEventListener("error", () => {
+        tile.remove();
+        if (!grid.children.length) {
+          card.remove();
+        }
+      });
+      thumb.appendChild(image);
+
+      const label = document.createElement("div");
+      label.className = "retro-weekend-label";
+      label.textContent = item.label;
+
+      const name = document.createElement("div");
+      name.className = "retro-weekend-name";
+      name.textContent = item.title || item.label;
+
+      tile.appendChild(thumb);
+      tile.appendChild(label);
+      tile.appendChild(name);
+      grid.appendChild(tile);
+    }
+
+    function renderRetroWeekendCard(game) {
+      const items = getRetroWeekendItems(game);
+      const hasStaticItems = items.length > 0;
+
+      const card = document.createElement("div");
+      card.className = "card retro-weekend-card";
+
+      const kicker = document.createElement("div");
+      kicker.className = "retro-weekend-kicker";
+      kicker.textContent = "Your Retro Weekend";
+
+      const title = document.createElement("div");
+      title.className = "retro-weekend-title";
+      title.textContent = `${monthNameFromNumber(game.month)} ${game.year} picks`;
+
+      const copy = document.createElement("div");
+      copy.className = "retro-weekend-copy";
+      copy.textContent = "A visual rewind for this release month. Only categories with results are shown.";
+
+      const grid = document.createElement("div");
+      grid.className = "retro-weekend-grid";
+
+      items.forEach((item) => {
+        createRetroWeekendTile(item, grid, card);
+      });
+
+      card.appendChild(kicker);
+      card.appendChild(title);
+      card.appendChild(copy);
+      card.appendChild(grid);
+
+      getCoverUrlForGame(game).then((coverUrl) => {
+        if (!coverUrl) {
+          if (!hasStaticItems && !grid.children.length) {
+            card.remove();
+          }
+          return;
+        }
+
+        createRetroWeekendTile({
+          label: "Game",
+          title: game.console ? `${game.title} - ${game.console}` : game.title,
+          imageUrl: coverUrl
+        }, grid, card);
+
+        const firstTile = grid.lastElementChild;
+        if (firstTile) {
+          grid.insertBefore(firstTile, grid.firstChild);
+        }
+      });
+
+      if (!hasStaticItems) {
+        card.classList.add("retro-weekend-pending");
+      }
+
+      return card;
+    }
+
     function renderResults(matches, query) {
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
@@ -1084,18 +1096,24 @@ async function loadAllData() {
         return;
       }
 
-      const first = matches[0];
-      const timeHeader = document.createElement("div");
-      timeHeader.className = "card";
-
-      const timeTitle = document.createElement("div");
-      timeTitle.className = "card-title";
-      timeTitle.textContent = `${monthNameFromNumber(first.month)} ${first.year}`;
-
-      timeHeader.appendChild(timeTitle);
-      resultsEl.appendChild(timeHeader);
-
       matches.forEach(game => {
+        const releaseSummary = document.createElement("div");
+        releaseSummary.className = "card release-summary";
+
+        const releaseLine = document.createElement("div");
+        releaseLine.className = "release-summary-line";
+        releaseLine.textContent =
+          `${game.title} - ${monthNameFromNumber(game.month)} ${game.year}` +
+          (game.console ? ` - ${game.console}` : "");
+
+        releaseSummary.appendChild(releaseLine);
+        resultsEl.appendChild(releaseSummary);
+
+        const retroWeekendCard = renderRetroWeekendCard(game);
+        if (retroWeekendCard) {
+          resultsEl.appendChild(retroWeekendCard);
+        }
+
         const card = document.createElement("div");
         card.className = "card";
 
@@ -1116,32 +1134,17 @@ getCoverUrlForGame(game).then((url) => {
 
         const title = document.createElement("div");
         title.className = "card-title";
-        title.textContent = game.title;
-
-        const subtitle = document.createElement("div");
-        subtitle.className = "card-subtitle";
-        subtitle.textContent =
-          `${monthNameFromNumber(game.month)} ${game.year}` +
-          (game.console ? ` • ${game.console}` : "");
+        title.textContent = "The rest of the months releases";
 
         main.appendChild(title);
-        main.appendChild(subtitle);
         header.appendChild(main);
-
-        if (game.console) {
-          const badge = document.createElement("div");
-          badge.className = "console-badge";
-          badge.textContent = game.console;
-          header.appendChild(badge);
-        }
 
         card.appendChild(header);
 
-        const keyCinema = cinema.filter(c => c.year === game.year && c.month === game.month);
-        const keyMusic  = music.filter(m => m.year === game.year && m.month === game.month);
-        const keyWwe    = wwe.filter(w => w.year === game.year && w.month === game.month);
-
-        const keyRental = rental.filter(r => r.year === game.year && r.month === game.month);
+        const keyCinema = filterEntriesByMonthYear(cinema, game.month, game.year);
+        const keyMusic = filterEntriesByMonthYear(music, game.month, game.year);
+        const keyWwe = filterEntriesByMonthYear(wwe, game.month, game.year);
+        const keyRental = filterEntriesByMonthYear(rental, game.month, game.year);
 
         function section(titleText, items, emptyText, linkMode, enableToggle = false) {
           const block = document.createElement("div");
@@ -1297,7 +1300,7 @@ card.appendChild(section(
     document.getElementById("search-form").addEventListener("submit", handleSearch);
 
     window.addEventListener("load", () => {
-      loadAllData();
+      loadDataIntoApp();
       document.getElementById("game-input").focus();
     });
 
