@@ -992,7 +992,7 @@ li::marker {
         item.addEventListener("mousedown", () => {
           syncSearchInputs(title);
           clearSuggestions();
-          document.getElementById("search-button").click();
+          handleExactTitleSelection(title);
         });
         targetSuggestionsEl.appendChild(item);
       });
@@ -1050,6 +1050,27 @@ li::marker {
       event.preventDefault();
       syncSearchInputs(resultsGameInput.value);
       document.getElementById("search-button").click();
+    }
+
+    function handleExactTitleSelection(title) {
+      const statusEl = document.getElementById("status");
+      const normalizedTitle = String(title || "").trim().toLowerCase();
+      const exactMatches = games.filter((game) => game.title.toLowerCase() === normalizedTitle);
+
+      if (!exactMatches.length) {
+        document.getElementById("search-button").click();
+        return;
+      }
+
+      const consoles = [...new Set(exactMatches.map((match) => (match.console || "").trim()))];
+      if (exactMatches.length > 1 && consoles.length > 1) {
+        statusEl.textContent = `Multiple versions found for "${title}". Choose a console.`;
+        showConsoleChooser(exactMatches, title);
+        return;
+      }
+
+      statusEl.textContent = `Found ${exactMatches.length} matching game(s).`;
+      renderResults(exactMatches, title);
     }
 
     function getRetroWeekendItems(game) {
