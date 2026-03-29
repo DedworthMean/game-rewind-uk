@@ -956,27 +956,34 @@ li::marker {
     const suggestionsEl = document.getElementById("suggestions");
     const resultsSuggestionsEl = document.getElementById("results-suggestions");
 
-    function syncSearchInputs(value, source = "primary") {
-      if (source !== "primary" && gameInput.value !== value) {
+    function syncSearchInputs(value) {
+      if (gameInput.value !== value) {
         gameInput.value = value;
       }
-      if (source !== "results" && resultsGameInput.value !== value) {
+      if (resultsGameInput.value !== value) {
         resultsGameInput.value = value;
       }
     }
 
-    function clearSuggestions() {
-      suggestionsEl.innerHTML = "";
-      suggestionsEl.style.display = "none";
-      resultsSuggestionsEl.innerHTML = "";
-      resultsSuggestionsEl.style.display = "none";
+    function clearSuggestions(source) {
+      const targets = source === "primary"
+        ? [suggestionsEl]
+        : source === "results"
+          ? [resultsSuggestionsEl]
+          : [suggestionsEl, resultsSuggestionsEl];
+
+      targets.forEach((target) => {
+        target.innerHTML = "";
+        target.style.display = "none";
+      });
     }
 
     function renderSuggestions(list, query, source = "primary") {
       const targetSuggestionsEl = source === "results" ? resultsSuggestionsEl : suggestionsEl;
       targetSuggestionsEl.innerHTML = "";
-      if (!query || !list.length) { clearSuggestions(); return; }
+      if (!query || !list.length) { clearSuggestions(source); return; }
 
+      clearSuggestions(source === "results" ? "primary" : "results");
       targetSuggestionsEl.style.display = "block";
       list.forEach(title => {
         const item = document.createElement("div");
@@ -994,8 +1001,7 @@ li::marker {
     function handleInputChange(source = "primary") {
       const inputEl = source === "results" ? resultsGameInput : gameInput;
       const query = inputEl.value.trim().toLowerCase();
-      syncSearchInputs(inputEl.value, source);
-      if (!isLoaded || !query) { clearSuggestions(); return; }
+      if (!isLoaded || !query) { clearSuggestions(source); return; }
 
       let matches = uniqueGameTitles.filter(title => title.toLowerCase().startsWith(query));
       if (!matches.length) matches = uniqueGameTitles.filter(title => title.toLowerCase().includes(query));
@@ -1003,11 +1009,11 @@ li::marker {
     }
 
     gameInput.addEventListener("input", () => handleInputChange("primary"));
-    gameInput.addEventListener("blur", () => setTimeout(clearSuggestions, 150));
+    gameInput.addEventListener("blur", () => setTimeout(() => clearSuggestions("primary"), 150));
     resultsGameInput.addEventListener("input", () => {
       handleInputChange("results");
     });
-    resultsGameInput.addEventListener("blur", () => setTimeout(clearSuggestions, 150));
+    resultsGameInput.addEventListener("blur", () => setTimeout(() => clearSuggestions("results"), 150));
 
     function handleSearch(event) {
       event.preventDefault();
@@ -1042,7 +1048,7 @@ li::marker {
 
     function handleResultsSearch(event) {
       event.preventDefault();
-      syncSearchInputs(resultsGameInput.value, "results");
+      syncSearchInputs(resultsGameInput.value);
       document.getElementById("search-button").click();
     }
 
