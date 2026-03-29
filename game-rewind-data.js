@@ -4,7 +4,8 @@
     cinema: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Cinema",
     music: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Music",
     wwe: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/WWE",
-    rental: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Rental"
+    rental: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Rental",
+    cartoons: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Cartoons"
   };
   const GOOGLE_SHEET_ID = "1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU";
   const RETRO_WEEKEND_GID = "435750815";
@@ -175,6 +176,35 @@
       .filter((entry) => entry.title && entry.month && entry.year);
   }
 
+  function parseCartoons(rows) {
+    const monthKeys = [
+      "Month",
+      "Date",
+      "UK Release Date (by Month)",
+      "UK Release Date",
+      "Release Month",
+      "Release Date"
+    ];
+    const titleKeys = ["Title", "Content", "Name", "Show", "Series"];
+    const linkKeys = ["Link", "URL", "Url", "url", "TMDB", "Tmdb"];
+
+    return rows
+      .map((row) => {
+        const monthRaw = monthKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const titleRaw = titleKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const { month, year } = parseMonthYear(monthRaw);
+
+        return {
+          title: String(titleRaw || "").trim(),
+          month,
+          year,
+          url: String(linkRaw || "").trim()
+        };
+      })
+      .filter((entry) => entry.title && entry.month && entry.year);
+  }
+
   function parseWwe(rows) {
     return rows
       .map((row) => {
@@ -268,6 +298,8 @@
 
     let rentalRows = [];
     let rentalLoaded = true;
+    let cartoonsRows = [];
+    let cartoonsLoaded = true;
     let retroWeekendRows = [];
     let retroWeekendLoaded = true;
 
@@ -276,6 +308,13 @@
     } catch (err) {
       console.warn("Rental sheet failed to load (non-fatal):", err);
       rentalLoaded = false;
+    }
+
+    try {
+      cartoonsRows = await fetchJsonArray(SHEET_URLS.cartoons);
+    } catch (err) {
+      console.warn("Cartoons sheet failed to load (non-fatal):", err);
+      cartoonsLoaded = false;
     }
 
     try {
@@ -290,6 +329,7 @@
     const music = parseMusic(musicRows);
     const wwe = parseWwe(wweRows);
     const rental = parseRental(rentalRows);
+    const cartoons = parseCartoons(cartoonsRows);
     const retroWeekend = parseRetroWeekend(retroWeekendRows);
 
     return {
@@ -298,8 +338,10 @@
       music,
       wwe,
       rental,
+      cartoons,
       retroWeekend,
       rentalLoaded,
+      cartoonsLoaded,
       retroWeekendLoaded,
       counts: {
         games: games.length,
@@ -307,6 +349,7 @@
         music: music.length,
         wwe: wwe.length,
         rental: rental.length,
+        cartoons: cartoons.length,
         retroWeekend: retroWeekend.length
       }
     };

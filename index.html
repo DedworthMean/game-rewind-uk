@@ -336,10 +336,6 @@ li::marker {
       .nav-links {
         gap: 0.5rem;
       }
-      .nav-link {
-        flex: 1 1 calc(50% - 0.25rem);
-        text-align: center;
-      }
       .section-list,
       .month-games-list {
         columns: 1;
@@ -367,6 +363,44 @@ li::marker {
       user-select: none;
     }
     .nav-link:hover {
+      background: #111827;
+    }
+    .nav-search {
+      flex: 1 1 320px;
+      min-width: 240px;
+    }
+    .nav-search-field {
+      position: relative;
+      width: 100%;
+    }
+    .nav-search-input {
+      width: 100%;
+      padding: 0.35rem 0.85rem;
+      padding-right: 6.4rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: rgba(2, 6, 23, 0.6);
+      color: #ffffff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .nav-search-input::placeholder {
+      color: rgba(255, 255, 255, 0.62);
+    }
+    .nav-search-button {
+      position: absolute;
+      top: 50%;
+      right: 0.28rem;
+      transform: translateY(-50%);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #111827;
+      color: #ffffff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .nav-search-button:hover {
       background: #111827;
     }
     .is-hidden {
@@ -419,6 +453,12 @@ li::marker {
 	<div class="nav-links">
   	<a href="#" id="browse-by-date" class="nav-link">Browse by date</a>
   	<a href="#" id="browse-by-console" class="nav-link">Browse by console</a>
+      <form id="results-search-form" class="nav-search is-hidden">
+        <div class="nav-search-field">
+          <input type="text" id="results-game-input" class="nav-search-input" placeholder="Search another game" autocomplete="off" />
+          <button type="submit" id="results-search-button" class="nav-search-button">Search</button>
+        </div>
+      </form>
 	</div>
     
 
@@ -442,6 +482,7 @@ li::marker {
     let music = [];
     let wwe = [];
     let rental = [];
+    let cartoons = [];
     let retroWeekend = [];
     let isLoaded = false;
     let uniqueGameTitles = [];
@@ -452,10 +493,12 @@ li::marker {
     function setLandingChromeVisible(visible) {
       const heroEl = document.getElementById("landing-hero");
       const searchPanelEl = document.getElementById("search-panel");
-      if (!heroEl || !searchPanelEl) return;
+      const resultsSearchEl = document.getElementById("results-search-form");
+      if (!heroEl || !searchPanelEl || !resultsSearchEl) return;
 
       heroEl.classList.toggle("is-hidden", !visible);
       searchPanelEl.classList.toggle("is-hidden", !visible);
+      resultsSearchEl.classList.toggle("is-hidden", visible);
     }
 
     function showConsoleChooser(matches, baseQuery) {
@@ -491,7 +534,7 @@ li::marker {
 
         btn.addEventListener("click", () => {
           renderResults([game], `${game.title} (${game.console || "Console"})`);
-          document.getElementById("game-input").value = game.title;
+          syncSearchInputs(game.title);
           statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
         });
 
@@ -520,7 +563,7 @@ li::marker {
       }
 
       if (populateInput) {
-        document.getElementById("game-input").value = matches[0].title;
+        syncSearchInputs(matches[0].title);
       }
 
       statusEl.textContent = `Found ${matches.length} matching game(s).`;
@@ -530,7 +573,7 @@ li::marker {
     function showSpecificGame(game, { populateInput = false } = {}) {
       const statusEl = document.getElementById("status");
       if (populateInput) {
-        document.getElementById("game-input").value = game.title;
+        syncSearchInputs(game.title);
       }
 
       statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
@@ -888,6 +931,7 @@ li::marker {
         music = data.music;
         wwe = data.wwe;
         rental = data.rental;
+        cartoons = data.cartoons;
         retroWeekend = data.retroWeekend;
         uniqueGameTitles = getUniqueGameTitles(games);
         isLoaded = true;
@@ -895,7 +939,8 @@ li::marker {
         statusEl.textContent =
           `Loaded ${data.counts.games} games, ${data.counts.cinema} films, ` +
           `${data.counts.music} tracks, ${data.counts.wwe} wrestling events` +
-          (data.rentalLoaded ? `, ${data.counts.rental} rental titles.` : ". (Rental not loaded)");
+          (data.rentalLoaded ? `, ${data.counts.rental} rental titles` : ", rental not loaded") +
+          (data.cartoonsLoaded ? `, ${data.counts.cartoons} cartoons.` : ", cartoons not loaded.");
 
         renderOnThisMonth();
       } catch (err) {
@@ -906,7 +951,17 @@ li::marker {
 
 
     const gameInput = document.getElementById("game-input");
+    const resultsGameInput = document.getElementById("results-game-input");
     const suggestionsEl = document.getElementById("suggestions");
+
+    function syncSearchInputs(value, source = "primary") {
+      if (source !== "primary" && gameInput.value !== value) {
+        gameInput.value = value;
+      }
+      if (source !== "results" && resultsGameInput.value !== value) {
+        resultsGameInput.value = value;
+      }
+    }
 
     function clearSuggestions() {
       suggestionsEl.innerHTML = "";
@@ -923,7 +978,7 @@ li::marker {
         item.className = "suggestion-item";
         item.textContent = title;
         item.addEventListener("mousedown", () => {
-          gameInput.value = title;
+          syncSearchInputs(title);
           clearSuggestions();
           document.getElementById("search-button").click();
         });
@@ -933,6 +988,7 @@ li::marker {
 
     function handleInputChange() {
       const query = gameInput.value.trim().toLowerCase();
+      syncSearchInputs(gameInput.value, "primary");
       if (!isLoaded || !query) { clearSuggestions(); return; }
 
       let matches = uniqueGameTitles.filter(title => title.toLowerCase().startsWith(query));
@@ -942,6 +998,10 @@ li::marker {
 
     gameInput.addEventListener("input", handleInputChange);
     gameInput.addEventListener("blur", () => setTimeout(clearSuggestions, 150));
+    resultsGameInput.addEventListener("input", () => {
+      syncSearchInputs(resultsGameInput.value, "results");
+      clearSuggestions();
+    });
 
     function handleSearch(event) {
       event.preventDefault();
@@ -972,6 +1032,12 @@ li::marker {
 
       statusEl.textContent = `Found ${matches.length} matching game(s).`;
       renderResults(matches, query);
+    }
+
+    function handleResultsSearch(event) {
+      event.preventDefault();
+      syncSearchInputs(resultsGameInput.value, "results");
+      document.getElementById("search-button").click();
     }
 
     function getRetroWeekendItems(game) {
@@ -1145,6 +1211,7 @@ getCoverUrlForGame(game).then((url) => {
         const keyMusic = filterEntriesByMonthYear(music, game.month, game.year);
         const keyWwe = filterEntriesByMonthYear(wwe, game.month, game.year);
         const keyRental = filterEntriesByMonthYear(rental, game.month, game.year);
+        const keyCartoons = filterEntriesByMonthYear(cartoons, game.month, game.year);
 
         function section(titleText, items, emptyText, linkMode, enableToggle = false) {
           const block = document.createElement("div");
@@ -1254,6 +1321,11 @@ card.appendChild(section(
           "No music data for this month.",
           "youtube"
         ));
+        card.appendChild(section(
+          keyCartoons.length ? `CARTOONS (${keyCartoons.length})` : "CARTOONS",
+          keyCartoons,
+          "No cartoons data for this month."
+        ));
 
         card.appendChild(section(
           keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
@@ -1270,6 +1342,7 @@ card.appendChild(section(
       const resultsEl = document.getElementById("results");
 
       gameInput.value = "";
+      resultsGameInput.value = "";
       clearSuggestions();
       resultsEl.innerHTML = "";
       setLandingChromeVisible(true);
@@ -1297,6 +1370,8 @@ card.appendChild(section(
       clearSuggestions();
       renderBrowseByConsole();
     });
+
+    document.getElementById("results-search-form").addEventListener("submit", handleResultsSearch);
     document.getElementById("search-form").addEventListener("submit", handleSearch);
 
     window.addEventListener("load", () => {
