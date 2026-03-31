@@ -308,7 +308,12 @@ li::marker {
     .section-more:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
-      button { width: 100%; }
+      #search-form > button {
+        width: 100%;
+      }
+      .nav-search-button {
+        width: auto;
+      }
       .hero-title {
         max-width: none;
         font-size: 2rem;
