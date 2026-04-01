@@ -947,7 +947,7 @@ li::marker {
           `Loaded ${data.counts.games} games, ${data.counts.cinema} films, ` +
           `${data.counts.music} tracks, ${data.counts.wwe} wrestling events` +
           (data.rentalLoaded ? `, ${data.counts.rental} rental titles` : ", rental not loaded") +
-          (data.cartoonsLoaded ? `, ${data.counts.cartoons} cartoons.` : ", cartoons not loaded.");
+          (data.cartoonsLoaded ? `, ${data.counts.cartoons} kids TV entries.` : ", kids TV not loaded.");
 
         renderOnThisMonth();
       } catch (err) {
@@ -1089,7 +1089,7 @@ li::marker {
         { label: "Cinema", title: entry.cinemaTitle, imageUrl: entry.cinemaImageUrl },
         { label: "Rental", title: entry.rentalTitle, imageUrl: entry.rentalImageUrl },
         { label: "Wrestling", title: entry.wweTitle, imageUrl: entry.wweImageUrl },
-        { label: "Cartoon", title: entry.cartoonsTitle, imageUrl: entry.cartoonsImageUrl }
+        { label: "Kids TV", title: entry.cartoonsTitle, imageUrl: entry.cartoonsImageUrl }
       ].filter((item) => item.imageUrl));
     }
 
@@ -1361,9 +1361,9 @@ card.appendChild(section(
           "youtube"
         ));
         card.appendChild(section(
-          keyCartoons.length ? `CARTOONS (${keyCartoons.length})` : "CARTOONS",
+          keyCartoons.length ? `KIDS TV (${keyCartoons.length})` : "KIDS TV",
           keyCartoons,
-          "No cartoons data for this month."
+          "No kids TV data for this month."
         ));
 
         card.appendChild(section(
