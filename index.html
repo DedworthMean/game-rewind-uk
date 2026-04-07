@@ -86,7 +86,7 @@
     input[type="text"]::placeholder { color: #6b7280; }
     input[type="text"]:focus {
       border-color: #6366f1;
-      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5), 0 0 22px rgba(168, 85, 247, 0.24);
     }
 
     .suggestions {
@@ -125,6 +125,17 @@
       color: white;
       font-size: 0.95rem;
       white-space: nowrap;
+      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(168, 85, 247, 0.28);
+      filter: saturate(1.08);
+    }
+    button:active { transform: translateY(0); }
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.7), 0 0 26px rgba(168, 85, 247, 0.34);
     }
     button:disabled { opacity: 0.6; cursor: default; }
 
@@ -357,7 +368,9 @@ li::marker {
       margin: 0.9rem 0 1.25rem;
     }
     .nav-link {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
       padding: 0.35rem 0.85rem;
       border-radius: 999px;
       border: 1px solid #4b5563;
@@ -367,9 +380,104 @@ li::marker {
       text-decoration: none;
       cursor: pointer;
       user-select: none;
+      transition: background 180ms ease, transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
     }
     .nav-link:hover {
       background: #111827;
+      transform: translateY(-1px);
+      border-color: #94a3b8;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    }
+    .nav-link-date:hover,
+    .nav-link-date:focus-visible {
+      border-color: rgba(252, 165, 165, 0.82);
+      box-shadow: 0 10px 24px rgba(239, 68, 68, 0.24);
+    }
+    .nav-link-console:hover,
+    .nav-link-console:focus-visible {
+      border-color: rgba(134, 239, 172, 0.75);
+      box-shadow: 0 10px 24px rgba(34, 197, 94, 0.2);
+    }
+    .nav-link-random:hover,
+    .nav-link-random:focus-visible {
+      border-color: rgba(253, 186, 116, 0.8);
+      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.22);
+    }
+    .nav-link:active {
+      transform: translateY(0);
+    }
+    .nav-link-icon {
+      width: 0.95rem;
+      height: 0.95rem;
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+    .nav-link-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .nav-link-date:hover .nav-link-icon,
+    .nav-link-date:focus-visible .nav-link-icon {
+      animation: date-nav-bob 320ms ease;
+    }
+    .nav-link-console:hover .nav-link-icon,
+    .nav-link-console:focus-visible .nav-link-icon {
+      animation: console-nav-pop 320ms ease;
+    }
+    .nav-link-random:hover .nav-link-icon,
+    .nav-link-random:focus-visible .nav-link-icon {
+      animation: random-nav-spin 450ms ease;
+    }
+    @keyframes date-nav-bob {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-1px) scale(1.08);
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
+    @keyframes console-nav-pop {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.12);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    @keyframes random-nav-spin {
+      0% {
+        transform: rotate(0deg) scale(1);
+      }
+      60% {
+        transform: rotate(160deg) scale(1.08);
+      }
+      100% {
+        transform: rotate(180deg) scale(1);
+      }
+    }
+    .results.results-random-reveal > * {
+      animation: results-random-reveal 360ms ease both;
+    }
+    .results.results-random-reveal > *:nth-child(2) { animation-delay: 35ms; }
+    .results.results-random-reveal > *:nth-child(3) { animation-delay: 70ms; }
+    .results.results-random-reveal > *:nth-child(4) { animation-delay: 105ms; }
+    .results.results-random-reveal > *:nth-child(5) { animation-delay: 140ms; }
+    @keyframes results-random-reveal {
+      0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
     .nav-search {
       flex: 1 1 320px;
@@ -457,9 +565,46 @@ li::marker {
     </div>
 
 	<div class="nav-links">
-  	<a href="#" id="browse-by-date" class="nav-link">Browse by date</a>
-  	<a href="#" id="browse-by-console" class="nav-link">Browse by console</a>
-  	<a href="#" id="random-game" class="nav-link">Random game</a>
+  	<a href="#" id="browse-by-date" class="nav-link nav-link-date">
+        <span class="nav-link-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="2.5"></rect>
+            <path d="M7.5 3.5v3"></path>
+            <path d="M16.5 3.5v3"></path>
+            <path d="M3.5 9.5h17"></path>
+            <path d="M8 13h.01"></path>
+            <path d="M12 13h.01"></path>
+            <path d="M16 13h.01"></path>
+          </svg>
+        </span>
+        <span>Browse by date</span>
+      </a>
+  	<a href="#" id="browse-by-console" class="nav-link nav-link-console">
+        <span class="nav-link-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <rect x="4" y="8" width="16" height="8" rx="3.5"></rect>
+            <path d="M8 12h4"></path>
+            <path d="M10 10v4"></path>
+            <path d="M15.5 11.25h.01"></path>
+            <path d="M17.5 12.75h.01"></path>
+            <path d="M9 16l-1.5 2"></path>
+            <path d="M15 16l1.5 2"></path>
+          </svg>
+        </span>
+        <span>Browse by console</span>
+      </a>
+  	<a href="#" id="random-game" class="nav-link nav-link-random">
+        <span class="nav-link-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M16 4h4v4"></path>
+            <path d="M20 4l-5.5 5.5"></path>
+            <path d="M4 7h4l5 5"></path>
+            <path d="M4 17h4l8-8"></path>
+            <path d="M16 20h4v-4"></path>
+          </svg>
+        </span>
+        <span>Random game</span>
+      </a>
       <form id="results-search-form" class="nav-search is-hidden">
         <div class="nav-search-field">
           <input type="text" id="results-game-input" class="nav-search-input" placeholder="Search another game" autocomplete="off" />
@@ -492,6 +637,7 @@ li::marker {
     let rental = [];
     let cartoons = [];
     let retroWeekend = [];
+    let lastRandomGameKey = "";
     let isLoaded = false;
     let uniqueGameTitles = [];
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
@@ -578,7 +724,18 @@ li::marker {
       renderResults(matches, query);
     }
 
-    function showSpecificGame(game, { populateInput = false } = {}) {
+    function getGameKey(game) {
+      return [game.title, game.console, game.month, game.year].map(value => String(value || "")).join("|");
+    }
+
+    function triggerResultsReveal() {
+      const resultsEl = document.getElementById("results");
+      resultsEl.classList.remove("results-random-reveal");
+      void resultsEl.offsetWidth;
+      resultsEl.classList.add("results-random-reveal");
+    }
+
+    function showSpecificGame(game, { populateInput = false, animateResults = false } = {}) {
       const statusEl = document.getElementById("status");
       if (populateInput) {
         syncSearchInputs(game.title);
@@ -586,6 +743,10 @@ li::marker {
 
       statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
       renderResults([game], game.title);
+
+      if (animateResults) {
+        triggerResultsReveal();
+      }
     }
 
     function showRandomGame() {
@@ -601,8 +762,15 @@ li::marker {
         return;
       }
 
-      const randomGame = games[Math.floor(Math.random() * games.length)];
-      showSpecificGame(randomGame, { populateInput: true });
+      const availableGames = games.length > 1 && lastRandomGameKey
+        ? games.filter((game) => getGameKey(game) !== lastRandomGameKey)
+        : games;
+
+      const source = availableGames.length ? availableGames : games;
+      const randomGame = source[Math.floor(Math.random() * source.length)];
+
+      lastRandomGameKey = getGameKey(randomGame);
+      showSpecificGame(randomGame, { populateInput: true, animateResults: true });
     }
 
     function renderOnThisMonth() {
