@@ -459,6 +459,7 @@ li::marker {
 	<div class="nav-links">
   	<a href="#" id="browse-by-date" class="nav-link">Browse by date</a>
   	<a href="#" id="browse-by-console" class="nav-link">Browse by console</a>
+  	<a href="#" id="random-game" class="nav-link">Random game</a>
       <form id="results-search-form" class="nav-search is-hidden">
         <div class="nav-search-field">
           <input type="text" id="results-game-input" class="nav-search-input" placeholder="Search another game" autocomplete="off" />
@@ -585,6 +586,23 @@ li::marker {
 
       statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
       renderResults([game], game.title);
+    }
+
+    function showRandomGame() {
+      const statusEl = document.getElementById("status");
+
+      if (!isLoaded) {
+        statusEl.textContent = "Still loading data. Try again in a moment.";
+        return;
+      }
+
+      if (!games.length) {
+        statusEl.textContent = "No games are available to choose from yet.";
+        return;
+      }
+
+      const randomGame = games[Math.floor(Math.random() * games.length)];
+      showSpecificGame(randomGame, { populateInput: true });
     }
 
     function renderOnThisMonth() {
@@ -1408,6 +1426,12 @@ card.appendChild(section(
       e.preventDefault();
       clearSuggestions();
       renderBrowseByConsole();
+    });
+
+    document.getElementById("random-game").addEventListener("click", (e) => {
+      e.preventDefault();
+      clearSuggestions();
+      showRandomGame();
     });
 
     document.getElementById("results-search-form").addEventListener("submit", handleResultsSearch);
