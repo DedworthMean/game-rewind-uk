@@ -18,6 +18,9 @@
   <meta name="twitter:title" content="Game Rewind UK" />
   <meta name="twitter:description" content="Search retro game releases in the UK and rewind to the films, music, rentals, and wrestling events from the same month." />
   <meta name="twitter:image" content="https://gamerewind.uk/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -1272,19 +1275,56 @@ li::marker {
       if (!entry) return items;
 
       return items.concat([
-        { label: "Cinema", title: entry.cinemaTitle, imageUrl: entry.cinemaImageUrl },
-        { label: "Rental", title: entry.rentalTitle, imageUrl: entry.rentalImageUrl },
-        { label: "Wrestling", title: entry.wweTitle, imageUrl: entry.wweImageUrl },
-        { label: "Kids TV", title: entry.cartoonsTitle, imageUrl: entry.cartoonsImageUrl }
+        { label: "Cinema", title: entry.cinemaTitle, imageUrl: entry.cinemaImageUrl, month: game.month, year: game.year },
+        { label: "Rental", title: entry.rentalTitle, imageUrl: entry.rentalImageUrl, month: game.month, year: game.year },
+        { label: "Wrestling", title: entry.wweTitle, imageUrl: entry.wweImageUrl, month: game.month, year: game.year },
+        { label: "Kids TV", title: entry.cartoonsTitle, imageUrl: entry.cartoonsImageUrl, month: game.month, year: game.year }
       ].filter((item) => item.imageUrl));
     }
 
+    function normalizeLookupText(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function getRetroWeekendDestination(item) {
+      if (!item || !item.title) return null;
+
+      if (item.label === "Cinema" || item.label === "Rental") {
+        return `https://www.imdb.com/find?q=${encodeURIComponent(item.title)}`;
+      }
+
+      if (item.label === "Wrestling") {
+        const match = wwe.find((entry) =>
+          entry.month === item.month &&
+          entry.year === item.year &&
+          normalizeLookupText(entry.title) === normalizeLookupText(item.title) &&
+          entry.url
+        );
+        return match?.url || null;
+      }
+
+      if (item.label === "Kids TV") {
+        const match = cartoons.find((entry) =>
+          entry.month === item.month &&
+          entry.year === item.year &&
+          normalizeLookupText(entry.title) === normalizeLookupText(item.title) &&
+          entry.url
+        );
+        return match?.url || null;
+      }
+
+      return null;
+    }
+
     function createRetroWeekendTile(item, grid, card) {
-      const tile = document.createElement("a");
+      const destination = getRetroWeekendDestination(item);
+      const tile = document.createElement(destination ? "a" : "div");
       tile.className = "retro-weekend-item";
-      tile.href = item.imageUrl;
-      tile.target = "_blank";
-      tile.rel = "noopener noreferrer";
+      if (destination) {
+        tile.href = destination;
+        tile.target = "_blank";
+        tile.rel = "noopener noreferrer";
+      }
 
       const thumb = document.createElement("div");
       thumb.className = "retro-weekend-thumb";
@@ -1358,7 +1398,9 @@ li::marker {
         createRetroWeekendTile({
           label: "Game",
           title: game.console ? `${game.title} - ${game.console}` : game.title,
-          imageUrl: coverUrl
+          imageUrl: coverUrl,
+          month: game.month,
+          year: game.year
         }, grid, card);
 
         const firstTile = grid.lastElementChild;
