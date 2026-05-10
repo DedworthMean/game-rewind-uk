@@ -255,16 +255,55 @@
     return [...new Set(games.map((game) => game.title))].sort((a, b) => a.localeCompare(b));
   }
 
+  function normalizeGameSearchText(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/['’]s\b/g, "")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
   function findGameMatches(games, query) {
-    const normalizedQuery = String(query || "").trim().toLowerCase();
-    if (!normalizedQuery) return [];
+    const rawQuery = String(query || "").trim().toLowerCase();
+    const normalizedQuery = normalizeGameSearchText(query);
+    if (!rawQuery && !normalizedQuery) return [];
 
-    let matches = games.filter((game) => game.title.toLowerCase() === normalizedQuery);
-    if (!matches.length) {
-      matches = games.filter((game) => game.title.toLowerCase().includes(normalizedQuery));
-    }
+    const queryTokens = normalizedQuery ? normalizedQuery.split(" ") : [];
+    const exactRawMatches = [];
+    const exactNormalizedMatches = [];
+    const partialNormalizedMatches = [];
+    const tokenMatches = [];
 
-    return matches;
+    games.forEach((game) => {
+      const rawTitle = String(game.title || "").trim().toLowerCase();
+      const normalizedTitle = normalizeGameSearchText(game.title);
+
+      if (rawQuery && rawTitle === rawQuery) {
+        exactRawMatches.push(game);
+        return;
+      }
+
+      if (normalizedQuery && normalizedTitle === normalizedQuery) {
+        exactNormalizedMatches.push(game);
+        return;
+      }
+
+      if (normalizedQuery && normalizedTitle.includes(normalizedQuery)) {
+        partialNormalizedMatches.push(game);
+        return;
+      }
+
+      if (queryTokens.length && queryTokens.every((token) => normalizedTitle.includes(token))) {
+        tokenMatches.push(game);
+      }
+    });
+
+    return exactRawMatches
+      .concat(exactNormalizedMatches, partialNormalizedMatches, tokenMatches);
   }
 
   async function getCoverUrlForGame(game) {
@@ -363,6 +402,7 @@
     getUniqueGameTitles,
     loadAllData,
     monthNameFromNumber,
+    normalizeGameSearchText,
     parseMonthYear
   };
 }());

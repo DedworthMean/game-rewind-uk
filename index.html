@@ -630,7 +630,8 @@ li::marker {
       getCoverUrlForGame,
       getUniqueGameTitles,
       loadAllData,
-      monthNameFromNumber
+      monthNameFromNumber,
+      normalizeGameSearchText
     } = window.GameRewindData;
 
     let games = [];
@@ -1195,11 +1196,18 @@ li::marker {
 
     function handleInputChange(source = "primary") {
       const inputEl = source === "results" ? resultsGameInput : gameInput;
-      const query = inputEl.value.trim().toLowerCase();
-      if (!isLoaded || !query) { clearSuggestions(source); return; }
+      const query = inputEl.value.trim();
+      const normalizedQuery = normalizeGameSearchText(query);
+      if (!isLoaded || !normalizedQuery) { clearSuggestions(source); return; }
 
-      let matches = uniqueGameTitles.filter(title => title.toLowerCase().startsWith(query));
-      if (!matches.length) matches = uniqueGameTitles.filter(title => title.toLowerCase().includes(query));
+      let matches = uniqueGameTitles.filter((title) =>
+        normalizeGameSearchText(title).startsWith(normalizedQuery)
+      );
+      if (!matches.length) {
+        matches = uniqueGameTitles.filter((title) =>
+          normalizeGameSearchText(title).includes(normalizedQuery)
+        );
+      }
       renderSuggestions(matches.slice(0, 10), query, source);
     }
 
@@ -1249,8 +1257,10 @@ li::marker {
 
     function handleExactTitleSelection(title) {
       const statusEl = document.getElementById("status");
-      const normalizedTitle = String(title || "").trim().toLowerCase();
-      const exactMatches = games.filter((game) => game.title.toLowerCase() === normalizedTitle);
+      const normalizedTitle = normalizeGameSearchText(title);
+      const exactMatches = games.filter((game) =>
+        normalizeGameSearchText(game.title) === normalizedTitle
+      );
 
       if (!exactMatches.length) {
         document.getElementById("search-button").click();
