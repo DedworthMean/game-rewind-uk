@@ -622,7 +622,7 @@ li::marker {
     <div class="results" id="results"></div>
   </div>
 
-  <script src="game-rewind-data.js"></script>
+  <script src="game-rewind-data.js?v=20260510b"></script>
   <script>
     const {
       filterEntriesByMonthYear,
@@ -1195,12 +1195,25 @@ li::marker {
       });
     }
 
+    function getSuggestionTitles(query) {
+      if (typeof getSuggestedGameTitles === "function") {
+        return getSuggestedGameTitles(games, query);
+      }
+
+      const normalizedQuery = normalizeGameSearchText(query);
+      if (!normalizedQuery) return [];
+
+      return uniqueGameTitles.filter((title) =>
+        normalizeGameSearchText(title).includes(normalizedQuery)
+      );
+    }
+
     function handleInputChange(source = "primary") {
       const inputEl = source === "results" ? resultsGameInput : gameInput;
       const query = inputEl.value.trim();
       if (!isLoaded || !normalizeGameSearchText(query)) { clearSuggestions(source); return; }
 
-      const matches = getSuggestedGameTitles(games, query);
+      const matches = getSuggestionTitles(query);
       renderSuggestions(matches, query, source);
     }
 
