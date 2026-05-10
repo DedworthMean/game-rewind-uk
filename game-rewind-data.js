@@ -260,8 +260,8 @@
       .toLowerCase()
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/['’]s\b/g, "")
-      .replace(/['’]/g, "")
+      .replace(/['\u2019]s\b/g, "")
+      .replace(/['\u2019]/g, "")
       .replace(/[^a-z0-9]+/g, " ")
       .trim()
       .replace(/\s+/g, " ");
@@ -304,6 +304,51 @@
 
     return exactRawMatches
       .concat(exactNormalizedMatches, partialNormalizedMatches, tokenMatches);
+  }
+
+  function getSuggestedGameTitles(games, query) {
+    const normalizedQuery = normalizeGameSearchText(query);
+    if (!normalizedQuery) return [];
+
+    const queryTokens = normalizedQuery.split(" ");
+    const exactNormalizedTitles = [];
+    const startsWithTitles = [];
+    const includesTitles = [];
+    const tokenTitles = [];
+    const seenTitles = new Set();
+
+    games.forEach((game) => {
+      const title = String(game.title || "").trim();
+      const normalizedTitle = normalizeGameSearchText(title);
+      if (!title || !normalizedTitle || seenTitles.has(title)) return;
+
+      if (normalizedTitle === normalizedQuery) {
+        exactNormalizedTitles.push(title);
+        seenTitles.add(title);
+        return;
+      }
+
+      if (normalizedTitle.startsWith(normalizedQuery)) {
+        startsWithTitles.push(title);
+        seenTitles.add(title);
+        return;
+      }
+
+      if (normalizedTitle.includes(normalizedQuery)) {
+        includesTitles.push(title);
+        seenTitles.add(title);
+        return;
+      }
+
+      if (queryTokens.every((token) => normalizedTitle.includes(token))) {
+        tokenTitles.push(title);
+        seenTitles.add(title);
+      }
+    });
+
+    return exactNormalizedTitles
+      .concat(startsWithTitles, includesTitles, tokenTitles)
+      .sort((a, b) => a.localeCompare(b));
   }
 
   async function getCoverUrlForGame(game) {
@@ -398,6 +443,7 @@
     SHEET_URLS,
     filterEntriesByMonthYear,
     findGameMatches,
+    getSuggestedGameTitles,
     getCoverUrlForGame,
     getUniqueGameTitles,
     loadAllData,
