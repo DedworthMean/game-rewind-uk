@@ -130,6 +130,7 @@
         const { month, year } = parseMonthYear(row["UK Release Date (by Month)"]);
         return {
           title: (row["Title"] || "").trim(),
+          imageUrl: String(row["Image"] || "").trim(),
           month,
           year
         };
@@ -156,6 +157,7 @@
 
         return {
           title: String(titleRaw || "").trim(),
+          imageUrl: String(row["Image"] || "").trim(),
           month,
           year
         };
@@ -169,6 +171,7 @@
         const { month, year } = parseMonthYear(row["Month"]);
         return {
           title: (row["Title"] || "").trim(),
+          imageUrl: String(row["Image"] || "").trim(),
           month,
           year
         };
@@ -197,6 +200,7 @@
 
         return {
           title: String(titleRaw || "").trim(),
+          imageUrl: String(row["Image Link"] || "").trim(),
           month,
           year,
           url: String(linkRaw || "").trim()
@@ -215,6 +219,7 @@
 
         return {
           title: eventRaw.trim(),
+          imageUrl: String(row["Image"] || "").trim(),
           month,
           year,
           url: String(urlRaw).trim()
@@ -232,6 +237,8 @@
           year,
           cinemaTitle: String(row["Cinema"] || "").trim(),
           cinemaImageUrl: String(row["Cinema Link"] || "").trim(),
+          musicTitle: String(row["Music"] || "").trim(),
+          musicImageUrl: String(row["Music Link"] || "").trim(),
           wweTitle: String(row["WWE"] || row["Wrestling"] || "").trim(),
           wweImageUrl: String(row["WWE Link"] || row["Wrestling Link"] || "").trim(),
           rentalTitle: String(row["Rental"] || "").trim(),

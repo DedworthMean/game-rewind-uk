@@ -198,6 +198,12 @@
         radial-gradient(circle at bottom left, rgba(244, 114, 182, 0.14), transparent 35%),
         linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.82));
     }
+    .custom-retro-weekend-card {
+      background:
+        radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(45, 212, 191, 0.14), transparent 32%),
+        linear-gradient(135deg, rgba(12, 18, 34, 0.96), rgba(24, 24, 27, 0.88));
+    }
     .retro-weekend-kicker {
       display: inline-flex;
       margin-bottom: 0.5rem;
@@ -248,6 +254,19 @@
       object-fit: cover;
       display: block;
     }
+    .retro-weekend-thumb--placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      text-align: center;
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background:
+        linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.92));
+    }
     .retro-weekend-label {
       color: #bfdbfe;
       font-size: 0.72rem;
@@ -261,6 +280,77 @@
       font-size: 0.88rem;
       line-height: 1.45;
     }
+    .custom-retro-weekend-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+      margin-bottom: 0.9rem;
+    }
+    .custom-retro-weekend-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.75rem;
+    }
+    .custom-retro-weekend-slot {
+      padding: 0.8rem 0.9rem;
+      border-radius: 0.95rem;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .custom-retro-weekend-slot-label {
+      color: #bfdbfe;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .custom-retro-weekend-slot-value,
+    .custom-retro-weekend-slot-value a {
+      color: #ffffff;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      text-decoration: none;
+    }
+    .custom-retro-weekend-slot-value a:hover {
+      text-decoration: underline;
+    }
+    .custom-retro-weekend-slot-empty {
+      color: #94a3b8;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    .builder-button,
+    .pick-button {
+      padding: 0.38rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.58);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.1;
+      white-space: nowrap;
+      box-shadow: none;
+      filter: none;
+      transform: none;
+    }
+    .builder-button:hover,
+    .pick-button:hover {
+      background: rgba(51, 65, 85, 0.82);
+      box-shadow: none;
+      filter: none;
+      transform: none;
+    }
+    .pick-button.is-selected {
+      border-color: rgba(250, 204, 21, 0.7);
+      background: rgba(113, 63, 18, 0.6);
+      color: #fef3c7;
+    }
+    .builder-button.is-secondary {
+      color: #cbd5e1;
+    }
     .section-list {
       list-style: none;
       padding-left: 0;
@@ -272,6 +362,16 @@
       font-size: 0.9rem;
     }
     .section-list li { margin: 0.15rem 0; color: #ffffff !important; }
+    .section-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      break-inside: avoid;
+    }
+    .section-entry-main {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
 
     .console-badge {
       align-self: flex-start;
@@ -1284,26 +1384,181 @@ li::marker {
       renderResults(exactMatches, title);
     }
 
-    function getRetroWeekendItems(game) {
-      const items = [];
-
+    function getRetroWeekendItems(game, customSelections = {}) {
       const entry = retroWeekend.find((item) => item.month === game.month && item.year === game.year);
-      if (!entry) return items;
+      const presetItems = {
+        cinema: entry && entry.cinemaTitle ? {
+          label: "Cinema",
+          title: entry.cinemaTitle,
+          imageUrl: entry.cinemaImageUrl,
+          month: game.month,
+          year: game.year
+        } : null,
+        rental: entry && entry.rentalTitle ? {
+          label: "Rental",
+          title: entry.rentalTitle,
+          imageUrl: entry.rentalImageUrl,
+          month: game.month,
+          year: game.year
+        } : null,
+        wwe: entry && entry.wweTitle ? {
+          label: "Wrestling",
+          title: entry.wweTitle,
+          imageUrl: entry.wweImageUrl,
+          month: game.month,
+          year: game.year
+        } : null,
+        cartoons: entry && entry.cartoonsTitle ? {
+          label: "Kids TV",
+          title: entry.cartoonsTitle,
+          imageUrl: entry.cartoonsImageUrl,
+          month: game.month,
+          year: game.year
+        } : null,
+        music: entry && entry.musicTitle ? {
+          label: "Music",
+          title: entry.musicTitle,
+          imageUrl: entry.musicImageUrl,
+          month: game.month,
+          year: game.year
+        } : null,
+        
+      };
 
-      return items.concat([
-        { label: "Cinema", title: entry.cinemaTitle, imageUrl: entry.cinemaImageUrl, month: game.month, year: game.year },
-        { label: "Rental", title: entry.rentalTitle, imageUrl: entry.rentalImageUrl, month: game.month, year: game.year },
-        { label: "Wrestling", title: entry.wweTitle, imageUrl: entry.wweImageUrl, month: game.month, year: game.year },
-        { label: "Kids TV", title: entry.cartoonsTitle, imageUrl: entry.cartoonsImageUrl, month: game.month, year: game.year }
-      ].filter((item) => item.imageUrl));
+      return [
+        { key: "cinema", label: "Cinema" },
+        { key: "rental", label: "Rental" },
+        { key: "music", label: "Music" },
+        { key: "cartoons", label: "Kids TV" },
+        { key: "wwe", label: "Wrestling" }
+      ]
+        .map((category) => {
+          const selected = customSelections[category.key];
+          if (selected && selected.title) {
+            return {
+              label: category.label,
+              title: selected.title,
+              imageUrl: selected.imageUrl || "",
+              month: game.month,
+              year: game.year,
+              url: selected.url || "",
+              linkMode: selected.linkMode || ""
+            };
+          }
+
+          return presetItems[category.key];
+        })
+        .filter((item) => item && item.title);
     }
 
     function normalizeLookupText(value) {
       return String(value || "").trim().toLowerCase();
     }
 
+    function getDefaultRetroWeekendSelections(game) {
+      const entry = retroWeekend.find((item) => item.month === game.month && item.year === game.year);
+      if (!entry) return {};
+
+      return {
+        ...(entry.cinemaTitle ? {
+          cinema: {
+            title: entry.cinemaTitle,
+            imageUrl: entry.cinemaImageUrl || "",
+            url: "",
+            linkMode: "imdb"
+          }
+        } : {}),
+        ...(entry.rentalTitle ? {
+          rental: {
+            title: entry.rentalTitle,
+            imageUrl: entry.rentalImageUrl || "",
+            url: "",
+            linkMode: "imdb"
+          }
+        } : {}),
+        ...(entry.cartoonsTitle ? {
+          cartoons: {
+            title: entry.cartoonsTitle,
+            imageUrl: entry.cartoonsImageUrl || "",
+            url: "",
+            linkMode: ""
+          }
+        } : {}),
+        ...(entry.wweTitle ? {
+          wwe: {
+            title: entry.wweTitle,
+            imageUrl: entry.wweImageUrl || "",
+            url: "",
+            linkMode: ""
+          }
+        } : {})
+      };
+    }
+
+    function mergeRetroWeekendSelections(defaultSelections, parsedSelections) {
+      const merged = {};
+      const categoryKeys = ["cinema", "rental", "music", "cartoons", "wwe"];
+
+      categoryKeys.forEach((key) => {
+        const defaultSelection = defaultSelections[key];
+        const parsedSelection = parsedSelections && typeof parsedSelections === "object" ? parsedSelections[key] : null;
+
+        if (parsedSelection && typeof parsedSelection === "object") {
+          merged[key] = {
+            ...(defaultSelection || {}),
+            ...parsedSelection
+          };
+          return;
+        }
+
+        if (defaultSelection) {
+          merged[key] = { ...defaultSelection };
+        }
+      });
+
+      return merged;
+    }
+
+    function stripDefaultRetroWeekendSelections(defaultSelections, savedSelections) {
+      const stripped = {};
+      const categoryKeys = ["cinema", "rental", "music", "cartoons", "wwe"];
+
+      categoryKeys.forEach((key) => {
+        const savedSelection = savedSelections && savedSelections[key];
+        if (!savedSelection || typeof savedSelection !== "object") return;
+
+        const defaultSelection = defaultSelections[key];
+        if (defaultSelection && defaultSelection.title === savedSelection.title) {
+          return;
+        }
+
+        stripped[key] = { ...savedSelection };
+      });
+
+      return stripped;
+    }
+
+    function getSectionItemDestination(item, linkMode) {
+      if (!item || !item.title) return null;
+      if (linkMode === "imdb") {
+        return `https://www.imdb.com/find?q=${encodeURIComponent(item.title)}`;
+      }
+      if (linkMode === "youtube") {
+        return `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}`;
+      }
+      if (item.url) {
+        return item.url;
+      }
+      return null;
+    }
+
     function getRetroWeekendDestination(item) {
       if (!item || !item.title) return null;
+
+      const directDestination = getSectionItemDestination(item, item.linkMode);
+      if (directDestination) {
+        return directDestination;
+      }
 
       if (item.label === "Cinema" || item.label === "Rental") {
         return `https://www.imdb.com/find?q=${encodeURIComponent(item.title)}`;
@@ -1344,19 +1599,22 @@ li::marker {
 
       const thumb = document.createElement("div");
       thumb.className = "retro-weekend-thumb";
-
-      const image = document.createElement("img");
-      image.src = item.imageUrl;
-      image.alt = item.title ? `${item.label}: ${item.title}` : `${item.label} image`;
-      image.loading = "lazy";
-      image.referrerPolicy = "no-referrer";
-      image.addEventListener("error", () => {
-        tile.remove();
-        if (!grid.children.length) {
-          card.remove();
-        }
-      });
-      thumb.appendChild(image);
+      if (item.imageUrl) {
+        const image = document.createElement("img");
+        image.src = item.imageUrl;
+        image.alt = item.title ? `${item.label}: ${item.title}` : `${item.label} image`;
+        image.loading = "lazy";
+        image.referrerPolicy = "no-referrer";
+        image.addEventListener("error", () => {
+          thumb.innerHTML = "";
+          thumb.classList.add("retro-weekend-thumb--placeholder");
+          thumb.textContent = item.label;
+        }, { once: true });
+        thumb.appendChild(image);
+      } else {
+        thumb.classList.add("retro-weekend-thumb--placeholder");
+        thumb.textContent = item.label;
+      }
 
       const label = document.createElement("div");
       label.className = "retro-weekend-label";
@@ -1372,16 +1630,15 @@ li::marker {
       grid.appendChild(tile);
     }
 
-    function renderRetroWeekendCard(game) {
-      const items = getRetroWeekendItems(game);
-      const hasStaticItems = items.length > 0;
-
+    function renderRetroWeekendCard(game, initialSelections = {}) {
       const card = document.createElement("div");
       card.className = "card retro-weekend-card";
+      let currentSelections = initialSelections;
+      let gameCoverUrl = "";
 
       const kicker = document.createElement("div");
       kicker.className = "retro-weekend-kicker";
-      kicker.textContent = "Your Retro Weekend";
+      kicker.textContent = "YOUR RETRO WEEKEND";
 
       const title = document.createElement("div");
       title.className = "retro-weekend-title";
@@ -1389,47 +1646,45 @@ li::marker {
 
       const copy = document.createElement("div");
       copy.className = "retro-weekend-copy";
-      copy.textContent = "A visual rewind for this release month. Only categories with results are shown.";
+      copy.textContent = "A visual rewind for this release month. Build your own Retro Weekend from the lists below.";
 
       const grid = document.createElement("div");
       grid.className = "retro-weekend-grid";
-
-      items.forEach((item) => {
-        createRetroWeekendTile(item, grid, card);
-      });
 
       card.appendChild(kicker);
       card.appendChild(title);
       card.appendChild(copy);
       card.appendChild(grid);
 
-      getCoverUrlForGame(game).then((coverUrl) => {
-        if (!coverUrl) {
-          if (!hasStaticItems && !grid.children.length) {
-            card.remove();
-          }
-          return;
-        }
-
+      function renderTiles() {
+        grid.innerHTML = "";
         createRetroWeekendTile({
           label: "Game",
           title: game.console ? `${game.title} - ${game.console}` : game.title,
-          imageUrl: coverUrl,
+          imageUrl: gameCoverUrl,
           month: game.month,
           year: game.year
         }, grid, card);
 
-        const firstTile = grid.lastElementChild;
-        if (firstTile) {
-          grid.insertBefore(firstTile, grid.firstChild);
-        }
-      });
-
-      if (!hasStaticItems) {
-        card.classList.add("retro-weekend-pending");
+        getRetroWeekendItems(game, currentSelections).forEach((item) => {
+          createRetroWeekendTile(item, grid, card);
+        });
       }
 
-      return card;
+      getCoverUrlForGame(game).then((coverUrl) => {
+        gameCoverUrl = coverUrl || "";
+        renderTiles();
+      });
+
+      renderTiles();
+
+      return {
+        card,
+        update(nextSelections) {
+          currentSelections = nextSelections || {};
+          renderTiles();
+        }
+      };
     }
 
     function renderResults(matches, query) {
@@ -1457,11 +1712,6 @@ li::marker {
 
         releaseSummary.appendChild(releaseLine);
         resultsEl.appendChild(releaseSummary);
-
-        const retroWeekendCard = renderRetroWeekendCard(game);
-        if (retroWeekendCard) {
-          resultsEl.appendChild(retroWeekendCard);
-        }
 
         const card = document.createElement("div");
         card.className = "card";
@@ -1495,8 +1745,20 @@ getCoverUrlForGame(game).then((url) => {
         const keyWwe = filterEntriesByMonthYear(wwe, game.month, game.year);
         const keyRental = filterEntriesByMonthYear(rental, game.month, game.year);
         const keyCartoons = filterEntriesByMonthYear(cartoons, game.month, game.year);
+        const customCategoryDefinitions = [
+          { key: "cinema", label: "Cinema", items: keyCinema, linkMode: "imdb" },
+          { key: "rental", label: "Rental", items: keyRental, linkMode: "imdb" },
+          { key: "music", label: "Music", items: keyMusic, linkMode: "youtube" },
+          { key: "cartoons", label: "Kids TV", items: keyCartoons, linkMode: undefined },
+          { key: "wwe", label: "Wrestling", items: keyWwe, linkMode: undefined }
+        ];
+        const defaultSelections = getDefaultRetroWeekendSelections(game);
+        let savedSelections = {};
+        let effectiveSelections = mergeRetroWeekendSelections(defaultSelections, savedSelections);
+        const retroWeekendController = renderRetroWeekendCard(game, effectiveSelections);
+        resultsEl.appendChild(retroWeekendController.card);
 
-        function section(titleText, items, emptyText, linkMode, enableToggle = false) {
+        function section(titleText, items, emptyText, linkMode, enableToggle = false, category = null) {
           const block = document.createElement("div");
           block.className = "section-block";
 
@@ -1531,6 +1793,9 @@ getCoverUrlForGame(game).then((url) => {
 
             visible.forEach(i => {
               const li = document.createElement("li");
+              li.className = "section-entry";
+              const mainContent = document.createElement("div");
+              mainContent.className = "section-entry-main";
 
               if (linkMode === "imdb") {
                 const link = document.createElement("a");
@@ -1539,7 +1804,7 @@ getCoverUrlForGame(game).then((url) => {
                 link.rel = "noopener noreferrer";
                 link.textContent = i.title;
                 link.className = "has-link";
-                li.appendChild(link);
+                mainContent.appendChild(link);
               } else if (linkMode === "youtube") {
                 const link = document.createElement("a");
                 link.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(i.title)}`;
@@ -1547,7 +1812,7 @@ getCoverUrlForGame(game).then((url) => {
                 link.rel = "noopener noreferrer";
                 link.textContent = i.title;
                 link.className = "has-link";
-                li.appendChild(link);
+                mainContent.appendChild(link);
               } else if (i.url) {
                 const a = document.createElement("a");
                 a.href = i.url;
@@ -1556,10 +1821,24 @@ getCoverUrlForGame(game).then((url) => {
                 a.textContent = i.title;
                 a.className = "has-link";
                 a.style.color = "#ffffff";
-                li.appendChild(a);
+                mainContent.appendChild(a);
               } else {
-                li.textContent = i.title;
+                mainContent.textContent = i.title;
               }
+
+              if (category) {
+                const isSelected = Boolean(savedSelections[category.key] && savedSelections[category.key].title === i.title);
+                const pickButton = document.createElement("button");
+                pickButton.type = "button";
+                pickButton.className = isSelected ? "pick-button is-selected" : "pick-button";
+                pickButton.textContent = isSelected ? "Picked" : "Pick";
+                pickButton.addEventListener("click", () => {
+                  toggleCustomSelection(category, i);
+                });
+                li.appendChild(pickButton);
+              }
+
+              li.appendChild(mainContent);
 
               ul.appendChild(li);
             });
@@ -1583,40 +1862,82 @@ getCoverUrlForGame(game).then((url) => {
           return block;
         }
 
+        function renderSections() {
+          card.replaceChildren(bg, header);
 
-card.appendChild(section(
-          keyCinema.length ? `In cinemas (${keyCinema.length})` : "In cinemas",
-          keyCinema,
-          "No cinema data for this month.",
-          "imdb",
-          true
-        ));
-card.appendChild(section(
-          keyRental.length ? `Available to rent (${keyRental.length})` : "Available to rent",
-          keyRental,
-          "No rental data for this month.",
-          "imdb",
-          true
-        ));
-card.appendChild(section(
-          keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
-          keyMusic,
-          "No music data for this month.",
-          "youtube"
-        ));
-        card.appendChild(section(
-          keyCartoons.length ? `KIDS TV (${keyCartoons.length})` : "KIDS TV",
-          keyCartoons,
-          "No kids TV data for this month.",
-          undefined,
-          true
-        ));
+          card.appendChild(section(
+            keyCinema.length ? `In cinemas (${keyCinema.length})` : "In cinemas",
+            keyCinema,
+            "No cinema data for this month.",
+            "imdb",
+            true,
+            customCategoryDefinitions[0]
+          ));
+          card.appendChild(section(
+            keyRental.length ? `Available to rent (${keyRental.length})` : "Available to rent",
+            keyRental,
+            "No rental data for this month.",
+            "imdb",
+            true,
+            customCategoryDefinitions[1]
+          ));
+          card.appendChild(section(
+            keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
+            keyMusic,
+            "No music data for this month.",
+            "youtube",
+            false,
+            customCategoryDefinitions[2]
+          ));
+          card.appendChild(section(
+            keyCartoons.length ? `KIDS TV (${keyCartoons.length})` : "KIDS TV",
+            keyCartoons,
+            "No kids TV data for this month.",
+            undefined,
+            true,
+            customCategoryDefinitions[3]
+          ));
+          card.appendChild(section(
+            keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
+            keyWwe,
+            "No wrestling events for this month.",
+            undefined,
+            false,
+            customCategoryDefinitions[4]
+          ));
+        }
 
-        card.appendChild(section(
-          keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
-          keyWwe,
-          "No wrestling events for this month."
-        ));
+        function preserveScrollPosition(updateFn) {
+          const scrollX = window.scrollX;
+          const scrollY = window.scrollY;
+          updateFn();
+          requestAnimationFrame(() => {
+            window.scrollTo(scrollX, scrollY);
+          });
+        }
+
+        function toggleCustomSelection(category, item) {
+          if (!category || !item || !item.title) return;
+
+          if (savedSelections[category.key] && savedSelections[category.key].title === item.title) {
+            delete savedSelections[category.key];
+          } else {
+            savedSelections[category.key] = {
+              title: item.title,
+              imageUrl: item.imageUrl || "",
+              url: item.url || "",
+              linkMode: category.linkMode || ""
+            };
+          }
+
+          effectiveSelections = mergeRetroWeekendSelections(defaultSelections, savedSelections);
+          preserveScrollPosition(() => {
+            retroWeekendController.update(effectiveSelections);
+            renderSections();
+          });
+        }
+
+        renderSections();
 
         resultsEl.appendChild(card);
       });
