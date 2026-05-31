@@ -379,49 +379,43 @@
     }
   }
 
+  async function loadOptionalSheet(name, loader) {
+    try {
+      return {
+        loaded: true,
+        rows: await loader()
+      };
+    } catch (err) {
+      console.warn(`${name} sheet failed to load (non-fatal):`, err);
+      return {
+        loaded: false,
+        rows: []
+      };
+    }
+  }
+
   async function loadAllData() {
-    const [gamesRows, cinemaRows, musicRows, wweRows] = await Promise.all([
-      fetchJsonArray(SHEET_URLS.games),
-      fetchJsonArray(SHEET_URLS.cinema),
-      fetchJsonArray(SHEET_URLS.music),
-      fetchJsonArray(SHEET_URLS.wwe)
+    const [gamesResult, cinemaResult, musicResult, wweResult, rentalResult, cartoonsResult, retroWeekendResult] = await Promise.all([
+      loadOptionalSheet("Games", () => fetchJsonArray(SHEET_URLS.games)),
+      loadOptionalSheet("Cinema", () => fetchJsonArray(SHEET_URLS.cinema)),
+      loadOptionalSheet("Music", () => fetchJsonArray(SHEET_URLS.music)),
+      loadOptionalSheet("WWE", () => fetchJsonArray(SHEET_URLS.wwe)),
+      loadOptionalSheet("Rental", () => fetchJsonArray(SHEET_URLS.rental)),
+      loadOptionalSheet("Cartoons", () => fetchJsonArray(SHEET_URLS.cartoons)),
+      loadOptionalSheet("Retro weekend", () => fetchGoogleVisualizationRows(GOOGLE_SHEET_ID, RETRO_WEEKEND_GID))
     ]);
 
-    let rentalRows = [];
-    let rentalLoaded = true;
-    let cartoonsRows = [];
-    let cartoonsLoaded = true;
-    let retroWeekendRows = [];
-    let retroWeekendLoaded = true;
-
-    try {
-      rentalRows = await fetchJsonArray(SHEET_URLS.rental);
-    } catch (err) {
-      console.warn("Rental sheet failed to load (non-fatal):", err);
-      rentalLoaded = false;
+    if (!gamesResult.loaded) {
+      throw new Error("Games sheet failed to load");
     }
 
-    try {
-      cartoonsRows = await fetchJsonArray(SHEET_URLS.cartoons);
-    } catch (err) {
-      console.warn("Cartoons sheet failed to load (non-fatal):", err);
-      cartoonsLoaded = false;
-    }
-
-    try {
-      retroWeekendRows = await fetchGoogleVisualizationRows(GOOGLE_SHEET_ID, RETRO_WEEKEND_GID);
-    } catch (err) {
-      console.warn("Retro weekend sheet failed to load (non-fatal):", err);
-      retroWeekendLoaded = false;
-    }
-
-    const games = parseGames(gamesRows);
-    const cinema = parseCinema(cinemaRows);
-    const music = parseMusic(musicRows);
-    const wwe = parseWwe(wweRows);
-    const rental = parseRental(rentalRows);
-    const cartoons = parseCartoons(cartoonsRows);
-    const retroWeekend = parseRetroWeekend(retroWeekendRows);
+    const games = parseGames(gamesResult.rows);
+    const cinema = parseCinema(cinemaResult.rows);
+    const music = parseMusic(musicResult.rows);
+    const wwe = parseWwe(wweResult.rows);
+    const rental = parseRental(rentalResult.rows);
+    const cartoons = parseCartoons(cartoonsResult.rows);
+    const retroWeekend = parseRetroWeekend(retroWeekendResult.rows);
 
     return {
       games,
@@ -431,9 +425,12 @@
       rental,
       cartoons,
       retroWeekend,
-      rentalLoaded,
-      cartoonsLoaded,
-      retroWeekendLoaded,
+      cinemaLoaded: cinemaResult.loaded,
+      musicLoaded: musicResult.loaded,
+      wweLoaded: wweResult.loaded,
+      rentalLoaded: rentalResult.loaded,
+      cartoonsLoaded: cartoonsResult.loaded,
+      retroWeekendLoaded: retroWeekendResult.loaded,
       counts: {
         games: games.length,
         cinema: cinema.length,
