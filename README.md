@@ -9,8 +9,7 @@ Live site: https://gamerewind.uk/
 - `index.html` - main app shell
 - `app.js` - home page interaction and rendering logic
 - `game-rewind-data.js` - Google Sheet loading, parsing, search helpers, and cover lookup
-- `styles.css` - shared layout and visual styles
-- `home.css` - home page specific styles
+- `styles.css` - site layout, visual styles, and responsive rules
 - `about.html` - project explanation and credits
 - `404.html` - lightweight missing page for GitHub Pages
 - `HANDOFF.md` - transfer notes for future setup

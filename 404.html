@@ -7,34 +7,45 @@
   <link rel="icon" type="image/png" sizes="32x32" href="flavico.png" />
   <meta name="robots" content="noindex" />
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    .hero-title {
-      max-width: 12ch;
-      font-size: clamp(2rem, 5vw, 3.4rem);
-      line-height: 0.98;
-    }
-  </style>
 </head>
 <body>
-  <div class="app">
-    <div class="header-row">
-      <img src="logo.png" alt="Game Rewind UK" class="logo">
+  <div class="page-shell">
+    <header class="site-header">
+      <a href="index.html" class="logo-button" aria-label="Game Rewind UK home">
+        <img src="logo.png" alt="Game Rewind UK" class="logo">
+      </a>
+      <div class="header-copy">
+        <div class="issue-label">Page not found</div>
+        <div class="masthead">Game Rewind UK</div>
+      </div>
       <div class="header-actions">
         <a href="index.html" class="top-link">Home</a>
         <a href="about.html" class="top-link">About</a>
       </div>
-    </div>
+    </header>
 
-    <section class="hero">
-      <div class="hero-kicker">Page not found</div>
-      <h1 class="hero-title">This rewind missed the tape.</h1>
-      <p class="hero-copy">
-        The page you were looking for is not here. Head back to Game Rewind UK and start from a game, month, or console.
-      </p>
-      <div class="hero-highlights">
-        <a href="index.html" class="top-link">Return home</a>
-      </div>
-    </section>
+    <main class="app">
+      <section class="hero">
+        <div class="hero-copy-block">
+          <div class="hero-kicker">Page not found</div>
+          <h1 class="hero-title">This rewind missed the tape.</h1>
+          <p class="hero-copy">
+            The page you were looking for is not here. Head back to Game Rewind UK and start from a game, month, or console.
+          </p>
+          <div class="hero-highlights">
+            <a href="index.html" class="top-link">Return home</a>
+          </div>
+        </div>
+        <div class="hero-screen" aria-hidden="true">
+          <div class="screen-topline">
+            <span>404</span>
+            <span>PAL</span>
+          </div>
+          <div class="screen-message">NO SIGNAL</div>
+          <div class="screen-submessage">Try the main archive instead.</div>
+        </div>
+      </section>
+    </main>
   </div>
 </body>
 </html>

@@ -12,7 +12,6 @@
   - `app.js`
   - `about.html`
   - `styles.css`
-  - `home.css`
   - `game-rewind-data.js`
 - Assets are stored directly in the repo
 - No build step was identified in this project
@@ -24,7 +23,7 @@
   - `index.html`
   - `app.js`
   - `about.html`
-  - `home.css`
+  - `styles.css`
   - `game-rewind-data.js`
 
 ## Repo

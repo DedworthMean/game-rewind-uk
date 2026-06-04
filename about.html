@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8" />
   <title>About - Game Rewind UK</title>
@@ -20,170 +20,70 @@
   <meta name="twitter:image" content="https://gamerewind.uk/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "AboutPage",
-      "name": "About Game Rewind UK",
-      "url": "https://gamerewind.uk/about.html",
-      "description": "Learn what Game Rewind UK is, where its data comes from, and how to explore retro UK gaming nostalgia by date or console.",
-      "inLanguage": "en-GB",
-      "isPartOf": {
-        "@type": "WebSite",
-        "name": "Game Rewind UK",
-        "url": "https://gamerewind.uk/"
-      }
-    }
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    .hero-title {
-      max-width: 12ch;
-      font-size: clamp(2rem, 5vw, 3.3rem);
-      line-height: 0.98;
-    }
-
-    @media (max-width: 600px) {
-      .hero-title {
-        max-width: none;
-        font-size: 2rem;
-      }
-      .card-subtitle,
-      .about-card p,
-      .about-list {
-        font-size: 0.9rem;
-      }
-    }
-
-    .about-card p {
-      color: #e5e7eb;
-      line-height: 1.6;
-      margin: 0.65rem 0;
-      font-size: 0.95rem;
-    }
-    .about-card a {
-      color: #ffffff;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-    .about-card strong {
-      color: #ffffff;
-    }
-    .about-list {
-      margin: 0.5rem 0 0;
-      padding-left: 1.1rem;
-      color: #e5e7eb;
-      line-height: 1.6;
-      font-size: 0.95rem;
-    }
-    .about-card .card-title,
-    .about-card .info-card-title {
-      letter-spacing: 0.01em;
-    }
-    li::marker {
-      color: #ffffff;
-    }
-    .section-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .info-card {
-      border: 1px solid rgba(71, 85, 105, 0.45);
-      border-radius: 1rem;
-      padding: 1rem 1.05rem;
-      background: rgba(15, 23, 42, 0.52);
-    }
-    .info-card-title {
-      color: #f8fafc;
-      font-size: 0.98rem;
-      font-weight: 700;
-      margin-bottom: 0.45rem;
-    }
-    .info-card p {
-      margin: 0;
-    }
-    @media (max-width: 700px) {
-      .section-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-  </style>
 </head>
 <body>
-  <div class="app">
-    <div class="header-row">
-      <img src="logo.png" alt="Game Rewind UK" class="logo">
-      <div class="header-actions">
-        <a href="index.html" class="top-link">Home</a>
-        <a href="about.html" class="top-link" aria-current="page">About</a>
+  <div class="page-shell">
+    <header class="site-header">
+      <a href="index.html" class="logo-button" aria-label="Game Rewind UK home">
+        <img src="logo.png" alt="Game Rewind UK" class="logo" />
+      </a>
+      <div class="header-copy">
+        <div class="issue-label">About the archive</div>
+        <div class="masthead">Game Rewind UK</div>
       </div>
-    </div>
+      <a href="index.html" class="top-link">Home</a>
+    </header>
 
-    <section class="hero">
-      <div class="hero-kicker">About the project</div>
-      <h1 class="hero-title">Why Game Rewind UK exists.</h1>
-      <p class="hero-copy">
-        This site is a nostalgia time machine built around UK release history. Search a game, browse by date, or jump through consoles and you can see the wider culture that surrounded it.
-      </p>
-      <div class="hero-highlights">
-        <span class="hero-pill">UK release focus</span>
-        <span class="hero-pill">Games, film, music, rentals, wrestling</span>
-        <span class="hero-pill">Google Sheet powered</span>
-        <span class="hero-pill">Personal archive project</span>
-      </div>
-    </section>
-
-    <div class="card about-card">
-      <div class="card-title">About Game Rewind UK</div>
-      <div class="card-subtitle">A small nostalgia time machine built around gaming and UK culture.</div>
-
-      <div class="section-block">
-        <div class="section-title">What it does</div>
-        <p>Search for a game, or browse by date or console, and Game Rewind UK shows what else was happening in the same month and year:</p>
-        <ul class="about-list">
-          <li>Games released in the UK</li>
-          <li>Films in UK cinemas</li>
-          <li>What was available to rent</li>
-          <li>Top 20 singles that month</li>
-          <li>What wrestling event was happening that month</li>
-        </ul>
-      </div>
-
-      <div class="section-grid">
-        <div class="info-card">
-          <div class="info-card-title">Where the data comes from</div>
-          <p>The app loads its data from a Google Sheet, so updates to the sheet appear in the app automatically. A lot of the release information has been sourced manually because UK dates are often inconsistently recorded.</p>
+    <main class="app">
+      <section class="hero">
+        <div class="hero-copy-block">
+          <div class="hero-kicker">Project notes</div>
+          <h1 class="hero-title">Why this rewind exists.</h1>
+          <p class="hero-copy">
+            Game Rewind UK is a nostalgia archive built around UK game release months. Search a game, pick a console, or browse a date and the app shows the wider culture around that moment.
+          </p>
+          <div class="hero-highlights">
+            <span class="hero-pill">Google Sheet powered</span>
+            <span class="hero-pill">UK release focus</span>
+            <span class="hero-pill">Games and pop culture</span>
+          </div>
         </div>
-        <div class="info-card">
-          <div class="info-card-title">How to use it</div>
-          <ul class="about-list">
-            <li><strong>Search</strong>: start typing a game title and pick from suggestions.</li>
-            <li><strong>Browse by date</strong>: choose a month and year to see that release window.</li>
-            <li><strong>Browse by console</strong>: pick a console and view games A-Z.</li>
-            <li><strong>Multiple versions</strong>: if a game appears on more than one console, you'll be asked to choose the one you meant.</li>
+        <div class="hero-screen" aria-hidden="true">
+          <div class="screen-topline">
+            <span>README</span>
+            <span>PAL</span>
+          </div>
+          <div class="screen-message">ABOUT</div>
+          <div class="screen-submessage">Built for game memories, release dates, rental shelves, magazine previews, and the month around each title.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">What it does</div>
+        <div class="card-subtitle">Search by game, browse by date, browse by console, or ask for a random game.</div>
+        <div class="section-block">
+          <div class="section-title">Included sections</div>
+          <ul class="section-list">
+            <li>UK game releases</li>
+            <li>Films in UK cinemas</li>
+            <li>Rental titles</li>
+            <li>Chart music</li>
+            <li>Kids TV</li>
+            <li>Wrestling events</li>
           </ul>
         </div>
-      </div>
-
-      <div class="section-block">
-        <div class="section-title">Notes</div>
-        <p>This is a personal project. Some months may have incomplete data, and titles may vary depending on how they're written in the database. I have tried to be as true and accurate as I can be.</p>
-        <p>If you spot a mistake, or have some knowledge about a game title or similar then please contact me at <a href="mailto:gamerewinduk@gmail.com">gamerewinduk@gmail.com</a></p>
-        <p>Cinema, Rental, Wrestling, and Cartoon images provided by TMDB - www.themoviedb.org</p>
-        <p>Game cover images provided by IGDB - www.igdb.com</p>
-        <p>Music cover images provided by the Cover Art Archive - https://musicbrainz.org</p>
-      </div>
-
-      <div class="section-block">
-        <div class="section-title">Back to Game Rewind UK</div>
-        <p><a href="index.html">Return to the main search</a></p>
-      </div>
-    </div>
+        <div class="section-block">
+          <div class="section-title">Credits</div>
+          <p class="card-subtitle">The app loads its working data from the existing Game Rewind UK Google Sheet, so sheet updates can appear in the app without rebuilding the site. Game cover images are provided through IGDB where available. Cinema, rental, wrestling, and cartoon images may use TMDB-linked data from the sheet. Music cover images may use the Cover Art Archive / MusicBrainz.</p>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Contact</div>
+          <p class="card-subtitle">If you spot a mistake, know a better UK release date, or have a suggestion, email <a href="mailto:gamerewinduk@gmail.com">gamerewinduk@gmail.com</a>.</p>
+        </div>
+      </section>
+    </main>
   </div>
 </body>
 </html>
-

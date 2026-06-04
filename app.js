@@ -17,6 +17,8 @@
     let cartoons = [];
     let retroWeekend = [];
     let lastRandomGameKey = "";
+    let randomSpinTimer = null;
+    let isRandomSpinning = false;
     let isLoaded = false;
     let uniqueGameTitles = [];
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
@@ -32,6 +34,11 @@
       heroEl.classList.toggle("is-hidden", !visible);
       searchPanelEl.classList.toggle("is-hidden", !visible);
       resultsSearchEl.classList.toggle("is-hidden", visible);
+    }
+
+    function clearShareModals() {
+      document.querySelectorAll(".share-card-modal").forEach((modal) => modal.remove());
+      document.body.classList.remove("has-share-modal");
     }
 
     function showConsoleChooser(matches, baseQuery) {
@@ -128,8 +135,30 @@
       }
     }
 
+    function setRandomButtonSpinning(isSpinning) {
+      const randomButton = document.getElementById("random-game");
+      if (!randomButton) return;
+
+      randomButton.classList.toggle("is-spinning", isSpinning);
+      randomButton.disabled = isSpinning;
+      randomButton.setAttribute("aria-busy", isSpinning ? "true" : "false");
+    }
+
+    function pickRandomGame() {
+      const availableGames = games.length > 1 && lastRandomGameKey
+        ? games.filter((game) => getGameKey(game) !== lastRandomGameKey)
+        : games;
+
+      const source = availableGames.length ? availableGames : games;
+      return source[Math.floor(Math.random() * source.length)];
+    }
+
     function showRandomGame() {
       const statusEl = document.getElementById("status");
+
+      if (isRandomSpinning) {
+        return;
+      }
 
       if (!isLoaded) {
         statusEl.textContent = "Still loading data. Try again in a moment.";
@@ -141,15 +170,34 @@
         return;
       }
 
-      const availableGames = games.length > 1 && lastRandomGameKey
-        ? games.filter((game) => getGameKey(game) !== lastRandomGameKey)
-        : games;
+      const randomGame = pickRandomGame();
+      const spinDuration = 1100;
+      const spinInterval = 72;
+      const startTime = Date.now();
 
-      const source = availableGames.length ? availableGames : games;
-      const randomGame = source[Math.floor(Math.random() * source.length)];
+      isRandomSpinning = true;
+      setRandomButtonSpinning(true);
+      setLandingChromeVisible(false);
+      statusEl.textContent = "Random Rewind is searching the archive...";
+      document.getElementById("results").innerHTML = "";
 
-      lastRandomGameKey = getGameKey(randomGame);
-      showSpecificGame(randomGame, { populateInput: true, animateResults: true });
+      randomSpinTimer = window.setInterval(() => {
+        const previewGame = games[Math.floor(Math.random() * games.length)];
+        syncSearchInputs(previewGame.title);
+        statusEl.textContent =
+          `Random Rewind: ${previewGame.title}` +
+          (previewGame.console ? ` - ${previewGame.console}` : "");
+
+        if (Date.now() - startTime >= spinDuration) {
+          window.clearInterval(randomSpinTimer);
+          randomSpinTimer = null;
+          isRandomSpinning = false;
+          setRandomButtonSpinning(false);
+
+          lastRandomGameKey = getGameKey(randomGame);
+          showSpecificGame(randomGame, { populateInput: true, animateResults: true });
+        }
+      }, spinInterval);
     }
 
     function renderOnThisMonth() {
@@ -674,7 +722,7 @@
       renderResults(exactMatches, title);
     }
 
-    function getRetroWeekendItems(game, customSelections = {}) {
+    function getRetroWeekendItems(game, customSelections = {}, includedCategories = null) {
       const entry = retroWeekend.find((item) => item.month === game.month && item.year === game.year);
       const presetItems = {
         cinema: entry && entry.cinemaTitle ? {
@@ -722,6 +770,7 @@
         { key: "cartoons", label: "Kids TV" },
         { key: "wwe", label: "Wrestling" }
       ]
+        .filter((category) => !includedCategories || includedCategories[category.key] !== false)
         .map((category) => {
           const selected = customSelections[category.key];
           if (selected && selected.title) {
@@ -920,11 +969,342 @@
       grid.appendChild(tile);
     }
 
+    function getShareCardItems(game, selections, gameImageUrl = "", includedCategories = null) {
+      const gameItem = includedCategories && includedCategories.game === false
+        ? []
+        : [{
+          label: "Game",
+          title: game.console ? `${game.title} - ${game.console}` : game.title,
+          imageUrl: gameImageUrl
+        }];
+
+      return [
+        ...gameItem,
+        ...getRetroWeekendItems(game, selections, includedCategories).map((item) => ({
+          label: item.label,
+          title: item.title,
+          imageUrl: item.imageUrl || ""
+        }))
+      ];
+    }
+
+    function buildRetroWeekendShareText(game, selections, includedCategories = null) {
+      const lines = [
+        "My Game Rewind UK Retro Weekend",
+        `${game.title}${game.console ? ` - ${game.console}` : ""}`,
+        `${monthNameFromNumber(game.month)} ${game.year}`,
+        "",
+        ...getShareCardItems(game, selections, "", includedCategories).map((item) => `${item.label}: ${item.title}`),
+        "",
+        "Made with Game Rewind UK"
+      ];
+
+      return lines.join("\n");
+    }
+
+    function renderHtmlShareCard(target, game, selections, gameImageUrl = "", includedCategories = null) {
+      const items = getShareCardItems(game, selections, gameImageUrl, includedCategories).slice(0, 6);
+
+      target.innerHTML = "";
+
+      const shell = document.createElement("div");
+      shell.className = "html-share-card";
+
+      const brand = document.createElement("div");
+      brand.className = "html-share-card-brand";
+      brand.textContent = "GAME REWIND UK";
+
+      const title = document.createElement("div");
+      title.className = "html-share-card-title";
+      title.textContent = "YOUR RETRO WEEKEND";
+
+      const meta = document.createElement("div");
+      meta.className = "html-share-card-meta";
+      meta.textContent = `${monthNameFromNumber(game.month)} ${game.year}`;
+
+      const grid = document.createElement("div");
+      grid.className = "html-share-card-grid";
+
+      if (!items.length) {
+        const empty = document.createElement("div");
+        empty.className = "html-share-card-empty";
+        empty.textContent = "No categories selected.";
+        grid.appendChild(empty);
+      }
+
+      items.forEach((item) => {
+        const tile = document.createElement("div");
+        tile.className = "html-share-card-tile";
+
+        const imageWrap = document.createElement("div");
+        imageWrap.className = "html-share-card-image";
+
+        if (item.imageUrl) {
+          const image = document.createElement("img");
+          image.src = item.imageUrl;
+          image.alt = `${item.label}: ${item.title}`;
+          image.loading = "lazy";
+          image.referrerPolicy = "no-referrer";
+          image.addEventListener("error", () => {
+            image.remove();
+            imageWrap.classList.add("is-placeholder");
+            imageWrap.textContent = item.label;
+          }, { once: true });
+          imageWrap.appendChild(image);
+        } else {
+          imageWrap.classList.add("is-placeholder");
+          imageWrap.textContent = item.label;
+        }
+
+        const label = document.createElement("div");
+        label.className = "html-share-card-label";
+        label.textContent = item.label;
+
+        const name = document.createElement("div");
+        name.className = "html-share-card-name";
+        name.textContent = item.title;
+
+        tile.appendChild(imageWrap);
+        tile.appendChild(label);
+        tile.appendChild(name);
+        grid.appendChild(tile);
+      });
+
+      const footer = document.createElement("div");
+      footer.className = "html-share-card-footer";
+      footer.textContent = "gamerewind.uk";
+
+      shell.appendChild(brand);
+      shell.appendChild(title);
+      shell.appendChild(meta);
+      shell.appendChild(grid);
+      shell.appendChild(footer);
+      target.appendChild(shell);
+    }
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      const lines = [];
+      let line = "";
+
+      words.forEach((word) => {
+        const testLine = line ? `${line} ${word}` : word;
+        if (ctx.measureText(testLine).width <= maxWidth || !line) {
+          line = testLine;
+          return;
+        }
+
+        lines.push(line);
+        line = word;
+      });
+
+      if (line) {
+        lines.push(line);
+      }
+
+      const visibleLines = lines.slice(0, maxLines);
+      if (lines.length > maxLines && visibleLines.length) {
+        let lastLine = visibleLines[visibleLines.length - 1];
+        while (lastLine.length && ctx.measureText(`${lastLine}...`).width > maxWidth) {
+          lastLine = lastLine.slice(0, -1).trim();
+        }
+        visibleLines[visibleLines.length - 1] = `${lastLine}...`;
+      }
+
+      visibleLines.forEach((lineText, index) => {
+        ctx.fillText(lineText, x, y + (index * lineHeight));
+      });
+
+      return y + (visibleLines.length * lineHeight);
+    }
+
+    function loadShareCardImage(src) {
+      return new Promise((resolve) => {
+        if (!src) {
+          resolve(null);
+          return;
+        }
+
+        const canvasSafeSrc = getCanvasSafeImageUrl(src);
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.referrerPolicy = "no-referrer";
+        image.onload = () => resolve(image);
+        image.onerror = () => resolve(null);
+        image.src = canvasSafeSrc;
+      });
+    }
+
+    function getCanvasSafeImageUrl(src) {
+      const value = String(src || "").trim();
+      if (!value || value.startsWith("data:") || value.startsWith("blob:")) {
+        return value;
+      }
+
+      if (!/^https?:\/\//i.test(value)) {
+        return value;
+      }
+
+      if (value.includes("images.weserv.nl/")) {
+        return value;
+      }
+
+      return `https://images.weserv.nl/?url=${encodeURIComponent(value)}`;
+    }
+
+    function drawCanvasImageContain(ctx, image, x, y, width, height) {
+      const imageRatio = image.width / image.height;
+      const boxRatio = width / height;
+      let drawWidth = width;
+      let drawHeight = height;
+
+      if (imageRatio > boxRatio) {
+        drawHeight = width / imageRatio;
+      } else {
+        drawWidth = height * imageRatio;
+      }
+
+      const drawX = x + ((width - drawWidth) / 2);
+      const drawY = y + ((height - drawHeight) / 2);
+      ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    }
+
+    async function drawRetroWeekendShareCard(canvas, game, selections, gameImageUrl = "", includedCategories = null) {
+      const ctx = canvas.getContext("2d");
+      const width = 1080;
+      const height = 1920;
+      const margin = 72;
+      const items = getShareCardItems(game, selections, gameImageUrl, includedCategories).slice(0, 6);
+      const loadedImages = await Promise.all(items.map((item) => loadShareCardImage(item.imageUrl)));
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const bg = ctx.createLinearGradient(0, 0, width, height);
+      bg.addColorStop(0, "#080914");
+      bg.addColorStop(0.55, "#121223");
+      bg.addColorStop(1, "#071a22");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = "rgba(255, 246, 216, 0.12)";
+      ctx.lineWidth = 1;
+      for (let y = 0; y < height; y += 18) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      for (let x = 0; x < width; x += 36) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#46dfff";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(36, 36, width - 72, height - 72);
+      ctx.strokeStyle = "#ffd84a";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(52, 52, width - 104, height - 104);
+
+      ctx.fillStyle = "#25f4a0";
+      ctx.font = "700 28px 'Chakra Petch', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("GAME REWIND UK", width / 2, 112);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 58px 'Chakra Petch', sans-serif";
+      ctx.fillText("YOUR RETRO WEEKEND", width / 2, 210);
+
+      ctx.fillStyle = "#ffd84a";
+      ctx.font = "700 34px 'Chakra Petch', sans-serif";
+      ctx.fillText(`${monthNameFromNumber(game.month)} ${game.year}`, width / 2, 268);
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = "rgba(255, 246, 216, 0.08)";
+      ctx.fillRect(margin, 330, width - (margin * 2), 2);
+
+      let itemY = 390;
+      const gap = 24;
+      const columns = 3;
+      const cardWidth = (width - (margin * 2) - (gap * (columns - 1))) / columns;
+      const imageHeight = Math.round(cardWidth * 1.5);
+      const textBlockHeight = 124;
+      const itemHeight = imageHeight + textBlockHeight;
+
+      items.forEach((item, index) => {
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        const x = margin + (column * (cardWidth + gap));
+        const y = itemY + (row * (itemHeight + 24));
+        const image = loadedImages[index];
+
+        ctx.fillStyle = "rgba(255, 246, 216, 0.06)";
+        ctx.fillRect(x, y, cardWidth, itemHeight);
+        ctx.strokeStyle = "rgba(255, 246, 216, 0.24)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, cardWidth, itemHeight);
+
+        if (image) {
+          try {
+            drawCanvasImageContain(ctx, image, x, y, cardWidth, imageHeight);
+          } catch (err) {
+            ctx.fillStyle = "rgba(70, 223, 255, 0.12)";
+            ctx.fillRect(x, y, cardWidth, imageHeight);
+          }
+        } else {
+          ctx.fillStyle = "rgba(70, 223, 255, 0.12)";
+          ctx.fillRect(x, y, cardWidth, imageHeight);
+          ctx.fillStyle = "#46dfff";
+          ctx.font = "700 28px 'Chakra Petch', sans-serif";
+          ctx.fillText(item.label.toUpperCase(), x + 22, y + 118);
+        }
+
+        ctx.fillStyle = "#46dfff";
+        ctx.font = "700 20px 'Chakra Petch', sans-serif";
+        ctx.fillText(item.label.toUpperCase(), x + 16, y + imageHeight + 32);
+
+        ctx.fillStyle = "#fff6d8";
+        ctx.font = "600 24px 'Chakra Petch', sans-serif";
+        wrapCanvasText(ctx, item.title, x + 16, y + imageHeight + 66, cardWidth - 32, 30, 3);
+      });
+
+      ctx.fillStyle = "#ff405c";
+      ctx.font = "700 26px 'Chakra Petch', sans-serif";
+      ctx.fillText("gamerewind.uk", margin, height - 92);
+
+      return canvas.toDataURL("image/png");
+    }
+
+    function downloadShareCard(dataUrl, game) {
+      const link = document.createElement("a");
+      const monthAbbreviations = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthPart = monthAbbreviations[(game.month || 1) - 1] || "Month";
+      const yearPart = String(game.year || "").slice(-2) || "YY";
+      const fileName = `RetroWeekend${monthPart}${yearPart}`;
+
+      link.href = dataUrl;
+      link.download = `${fileName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
     function renderRetroWeekendCard(game, initialSelections = {}) {
       const card = document.createElement("div");
       card.className = "card retro-weekend-card";
       let currentSelections = initialSelections;
       let gameCoverUrl = "";
+      const includedCategories = {
+        game: true,
+        cinema: true,
+        rental: true,
+        music: true,
+        cartoons: true,
+        wwe: true
+      };
 
       const kicker = document.createElement("div");
       kicker.className = "retro-weekend-kicker";
@@ -934,36 +1314,226 @@
       title.className = "retro-weekend-title";
       title.textContent = `${monthNameFromNumber(game.month)} ${game.year} picks`;
 
+      const titleRow = document.createElement("div");
+      titleRow.className = "retro-weekend-title-row";
+
+      const createShareButton = document.createElement("button");
+      createShareButton.type = "button";
+      createShareButton.className = "share-card-button";
+      createShareButton.textContent = "Create share card";
+
       const copy = document.createElement("div");
       copy.className = "retro-weekend-copy";
       copy.textContent = "A visual rewind for this release month. Build your own Retro Weekend from the lists below.";
 
+      const includePanel = document.createElement("div");
+      includePanel.className = "include-panel";
+
+      const includeLabel = document.createElement("div");
+      includeLabel.className = "include-panel-label";
+      includeLabel.textContent = "Include in card";
+
+      const includeControls = document.createElement("div");
+      includeControls.className = "include-controls";
+
+      const includeOptions = [
+        { key: "game", label: "Game" },
+        { key: "cinema", label: "Cinema" },
+        { key: "rental", label: "Rental" },
+        { key: "music", label: "Music" },
+        { key: "cartoons", label: "Kids TV" },
+        { key: "wwe", label: "Wrestling" }
+      ];
+
+      includeOptions.forEach((option) => {
+        const label = document.createElement("label");
+        label.className = "include-toggle";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = true;
+        input.addEventListener("change", () => {
+          includedCategories[option.key] = input.checked;
+          shareCardDataUrl = "";
+          renderTiles();
+          if (!shareModal.classList.contains("is-hidden")) {
+            createShareCard();
+          }
+        });
+
+        const text = document.createElement("span");
+        text.textContent = option.label;
+
+        label.appendChild(input);
+        label.appendChild(text);
+        includeControls.appendChild(label);
+      });
+
+      includePanel.appendChild(includeLabel);
+      includePanel.appendChild(includeControls);
+
       const grid = document.createElement("div");
       grid.className = "retro-weekend-grid";
 
+      const shareModal = document.createElement("div");
+      shareModal.className = "share-card-modal is-hidden";
+      shareModal.setAttribute("role", "dialog");
+      shareModal.setAttribute("aria-modal", "true");
+      shareModal.setAttribute("aria-label", "Retro Weekend share card");
+      shareModal.tabIndex = -1;
+
+      const shareModalPanel = document.createElement("div");
+      shareModalPanel.className = "share-card-modal-panel";
+
+      const shareModalHeader = document.createElement("div");
+      shareModalHeader.className = "share-card-modal-header";
+
+      const shareModalTitle = document.createElement("div");
+      shareModalTitle.className = "share-card-modal-title";
+      shareModalTitle.textContent = "Your share card";
+
+      const sharePreview = document.createElement("div");
+      sharePreview.className = "share-card-preview";
+
+      const shareActions = document.createElement("div");
+      shareActions.className = "share-card-actions";
+
+      const downloadShareButton = document.createElement("button");
+      downloadShareButton.type = "button";
+      downloadShareButton.className = "share-card-button";
+      downloadShareButton.textContent = "Download PNG";
+
+      const copyShareButton = document.createElement("button");
+      copyShareButton.type = "button";
+      copyShareButton.className = "share-card-button is-secondary";
+      copyShareButton.textContent = "Copy text";
+
+      const closeShareButton = document.createElement("button");
+      closeShareButton.type = "button";
+      closeShareButton.className = "share-card-button is-secondary";
+      closeShareButton.textContent = "Close";
+
+      let shareCardDataUrl = "";
+
       card.appendChild(kicker);
-      card.appendChild(title);
+      titleRow.appendChild(title);
+      titleRow.appendChild(createShareButton);
+      card.appendChild(titleRow);
       card.appendChild(copy);
+      card.appendChild(includePanel);
       card.appendChild(grid);
+      shareModalHeader.appendChild(shareModalTitle);
+      shareModalHeader.appendChild(closeShareButton);
+      shareActions.appendChild(downloadShareButton);
+      shareActions.appendChild(copyShareButton);
+      shareModalPanel.appendChild(shareModalHeader);
+      shareModalPanel.appendChild(sharePreview);
+      shareModalPanel.appendChild(shareActions);
+      shareModal.appendChild(shareModalPanel);
+      document.body.appendChild(shareModal);
+
+      function closeShareModal() {
+        shareModal.classList.add("is-hidden");
+        document.body.classList.remove("has-share-modal");
+      }
+
+      function createShareCard() {
+        createShareButton.disabled = true;
+        createShareButton.textContent = "Opening...";
+        try {
+          renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories);
+          shareModal.classList.remove("is-hidden");
+          document.body.classList.add("has-share-modal");
+          shareModal.focus();
+        } finally {
+          createShareButton.disabled = false;
+          createShareButton.textContent = "Create share card";
+        }
+      }
+
+      async function copyShareText() {
+        const text = buildRetroWeekendShareText(game, currentSelections, includedCategories);
+
+        function showCopiedFeedback() {
+          copyShareButton.textContent = "Copied";
+          window.setTimeout(() => {
+            copyShareButton.textContent = "Copy text";
+          }, 1400);
+        }
+
+        try {
+          await navigator.clipboard.writeText(text);
+          showCopiedFeedback();
+        } catch (err) {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+
+          try {
+            if (document.execCommand("copy")) {
+              showCopiedFeedback();
+            } else {
+              window.prompt("Copy your Retro Weekend text:", text);
+            }
+          } finally {
+            textarea.remove();
+          }
+        }
+      }
 
       function renderTiles() {
         grid.innerHTML = "";
-        createRetroWeekendTile({
-          label: "Game",
-          title: game.console ? `${game.title} - ${game.console}` : game.title,
-          imageUrl: gameCoverUrl,
-          month: game.month,
-          year: game.year
-        }, grid, card);
 
-        getRetroWeekendItems(game, currentSelections).forEach((item) => {
+        if (includedCategories.game !== false) {
+          createRetroWeekendTile({
+            label: "Game",
+            title: game.console ? `${game.title} - ${game.console}` : game.title,
+            imageUrl: gameCoverUrl,
+            month: game.month,
+            year: game.year
+          }, grid, card);
+        }
+
+        getRetroWeekendItems(game, currentSelections, includedCategories).forEach((item) => {
           createRetroWeekendTile(item, grid, card);
         });
+
+        if (!grid.children.length) {
+          const empty = document.createElement("div");
+          empty.className = "retro-weekend-empty";
+          empty.textContent = "No categories selected. Switch one back on to build your weekend.";
+          grid.appendChild(empty);
+        }
       }
 
       getCoverUrlForGame(game).then((coverUrl) => {
         gameCoverUrl = coverUrl || "";
         renderTiles();
+      });
+
+      createShareButton.addEventListener("click", createShareCard);
+      downloadShareButton.addEventListener("click", async () => {
+        if (!shareCardDataUrl) {
+          const canvas = document.createElement("canvas");
+          shareCardDataUrl = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories);
+        }
+        downloadShareCard(shareCardDataUrl, game);
+      });
+      copyShareButton.addEventListener("click", copyShareText);
+      closeShareButton.addEventListener("click", closeShareModal);
+      shareModal.addEventListener("click", (event) => {
+        if (event.target === shareModal) {
+          closeShareModal();
+        }
+      });
+      shareModal.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeShareModal();
+        }
       });
 
       renderTiles();
@@ -972,7 +1542,11 @@
         card,
         update(nextSelections) {
           currentSelections = nextSelections || {};
+          shareCardDataUrl = "";
           renderTiles();
+          if (!shareModal.classList.contains("is-hidden")) {
+            createShareCard();
+          }
         }
       };
     }
@@ -980,6 +1554,7 @@
     function renderResults(matches, query) {
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
+      clearShareModals();
       resultsEl.innerHTML = "";
 
       if (!matches.length) {
@@ -1023,9 +1598,15 @@ getCoverUrlForGame(game).then((url) => {
 
         const title = document.createElement("div");
         title.className = "card-title";
-        title.textContent = "The rest of the months releases";
+        title.textContent = "The rest of this month's releases";
 
         main.appendChild(title);
+
+        const subtitle = document.createElement("div");
+        subtitle.className = "card-subtitle picks-subtitle";
+        subtitle.textContent = "Make your own retro picks to create your ideal retro weekend.";
+        main.appendChild(subtitle);
+
         header.appendChild(main);
 
         card.appendChild(header);
@@ -1122,8 +1703,10 @@ getCoverUrlForGame(game).then((url) => {
                 pickButton.type = "button";
                 pickButton.className = isSelected ? "pick-button is-selected" : "pick-button";
                 pickButton.textContent = isSelected ? "Picked" : "Pick";
-                pickButton.addEventListener("click", () => {
-                  toggleCustomSelection(category, i);
+                pickButton.dataset.categoryKey = category.key;
+                pickButton.dataset.itemTitle = i.title;
+                pickButton.addEventListener("click", (event) => {
+                  toggleCustomSelection(category, i, event.currentTarget);
                 });
                 li.appendChild(pickButton);
               }
@@ -1197,16 +1780,50 @@ getCoverUrlForGame(game).then((url) => {
           ));
         }
 
-        function preserveScrollPosition(updateFn) {
+        function preserveScrollPosition(updateFn, anchorEl = null) {
           const scrollX = window.scrollX;
           const scrollY = window.scrollY;
+          const anchorTop = anchorEl ? anchorEl.getBoundingClientRect().top : null;
+          const root = document.documentElement;
+          const previousScrollBehavior = root.style.scrollBehavior;
+
+          root.style.scrollBehavior = "auto";
           updateFn();
-          requestAnimationFrame(() => {
+
+          function restorePosition() {
+            if (anchorEl && anchorTop !== null && document.body.contains(anchorEl)) {
+              const nextTop = anchorEl.getBoundingClientRect().top;
+              window.scrollBy(0, nextTop - anchorTop);
+              return;
+            }
+
             window.scrollTo(scrollX, scrollY);
+          }
+
+          restorePosition();
+          requestAnimationFrame(() => {
+            restorePosition();
+            root.style.scrollBehavior = previousScrollBehavior;
           });
         }
 
-        function toggleCustomSelection(category, item) {
+        function updatePickButtonStates() {
+          card.querySelectorAll(".pick-button").forEach((button) => {
+            const categoryKey = button.dataset.categoryKey;
+            const itemTitle = button.dataset.itemTitle;
+            const isSelected = Boolean(
+              categoryKey &&
+              itemTitle &&
+              savedSelections[categoryKey] &&
+              savedSelections[categoryKey].title === itemTitle
+            );
+
+            button.classList.toggle("is-selected", isSelected);
+            button.textContent = isSelected ? "Picked" : "Pick";
+          });
+        }
+
+        function toggleCustomSelection(category, item, anchorEl = null) {
           if (!category || !item || !item.title) return;
 
           if (savedSelections[category.key] && savedSelections[category.key].title === item.title) {
@@ -1223,8 +1840,8 @@ getCoverUrlForGame(game).then((url) => {
           effectiveSelections = mergeRetroWeekendSelections(defaultSelections, savedSelections);
           preserveScrollPosition(() => {
             retroWeekendController.update(effectiveSelections);
-            renderSections();
-          });
+            updatePickButtonStates();
+          }, anchorEl);
         }
 
         renderSections();
@@ -1240,6 +1857,7 @@ getCoverUrlForGame(game).then((url) => {
       gameInput.value = "";
       resultsGameInput.value = "";
       clearSuggestions();
+      clearShareModals();
       resultsEl.innerHTML = "";
       setLandingChromeVisible(true);
 
@@ -1254,6 +1872,7 @@ getCoverUrlForGame(game).then((url) => {
     }
 
     document.getElementById("home-button").addEventListener("click", resetApp);
+    document.getElementById("header-home-button").addEventListener("click", resetApp);
 
     document.getElementById("browse-by-date").addEventListener("click", (e) => {
       e.preventDefault();
