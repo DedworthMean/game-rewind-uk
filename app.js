@@ -24,6 +24,114 @@
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
     const MAX_SECTION_ITEMS = 20;
     const MAX_MONTH_GAMES = 20;
+    const SHARE_CATEGORY_KEYS = ["game", "cinema", "rental", "music", "cartoons", "wwe"];
+    const PICK_CATEGORY_KEYS = ["cinema", "rental", "music", "cartoons", "wwe"];
+    const SHARE_CARD_TEMPLATES = [
+      {
+        key: "standard",
+        label: "Standard",
+        backgroundUrl: "",
+        text: "#fff6d8",
+        muted: "#ffd84a",
+        accent: "#46dfff",
+        footer: "#ff405c",
+        panel: "rgba(0, 0, 0, 0)",
+        showTemplateTag: false,
+        box: { x: 72, y: 72, width: 936, height: 1776 }
+      },
+      {
+        key: "magazine",
+        label: "Magazine",
+        backgroundUrl: "share-card-templates/magazine.png",
+        text: "#ffffff",
+        muted: "#ffd84a",
+        accent: "#ff1714",
+        footer: "#ffffff",
+        panel: "rgba(0, 0, 0, 0)",
+        showBrand: false,
+        showTemplateTag: false,
+        showFooter: false,
+        box: { x: 310, y: 390, width: 740, height: 1380 }
+      },
+      {
+        key: "80s-movie",
+        label: "80's Movie",
+        backgroundUrl: "share-card-templates/80s-movie.png",
+        text: "#ffffff",
+        muted: "#ff7a32",
+        accent: "#ff4ac4",
+        footer: "#ffd84a",
+        panel: "rgba(0, 0, 0, 0.35)",
+        showBrand: false,
+        showTemplateTag: false,
+        box: { x: 80, y: 560, width: 920, height: 1280 }
+      },
+      {
+        key: "game-box",
+        label: "Game Box",
+        backgroundUrl: "share-card-templates/game-box.png",
+        text: "#111827",
+        muted: "#c01820",
+        accent: "#0b55b8",
+        footer: "#c01820",
+        panel: "rgba(255, 255, 255, 0)",
+        showBrand: false,
+        showTemplateTag: false,
+        showFooter: false,
+        box: { x: 92, y: 337, width: 896, height: 1028 }
+      },
+      {
+        key: "web-y2k",
+        label: "Web Y2K",
+        backgroundUrl: "share-card-templates/web-y2k.png",
+        text: "#063075",
+        muted: "#0d4fbd",
+        accent: "#1f66d5",
+        footer: "#063075",
+        panel: "#f3f3f3",
+        showBrand: false,
+        showTemplateTag: false,
+        showFooter: false,
+        box: { x: 256, y: 318, width: 560, height: 940 }
+      },
+      {
+        key: "teletext",
+        label: "Teletext",
+        backgroundUrl: "share-card-templates/teletext.png",
+        text: "#ffffff",
+        muted: "#ffff00",
+        accent: "#00ffff",
+        footer: "#00ff00",
+        panel: "rgba(0, 0, 0, 0)",
+        showBrand: false,
+        showTemplateTag: false,
+        showFooter: false,
+        box: { x: 50, y: 250, width: 980, height: 760 }
+      },
+      {
+        key: "vhs-tape",
+        label: "VHS Tape",
+        backgroundUrl: "share-card-templates/vhs-tape.png",
+        text: "#fff6d8",
+        muted: "#f0c07a",
+        accent: "#ff7a32",
+        footer: "#f0c07a",
+        panel: "rgba(0, 0, 0, 0.28)",
+        showBrand: false,
+        showTemplateTag: false,
+        showFooter: false,
+        box: { x: 110, y: 520, width: 630, height: 760 }
+      }
+    ];
+
+    function getShareCardTemplate(templateKey) {
+      return SHARE_CARD_TEMPLATES.find((template) => template.key === templateKey) || SHARE_CARD_TEMPLATES[0];
+    }
+
+    function getShareCardTemplateExportBackground(template) {
+      const embeddedBackgrounds = window.GameRewindShareCardBackgrounds || {};
+      return embeddedBackgrounds[template.key] || template.backgroundUrl || "";
+    }
 
     function setLandingChromeVisible(visible) {
       const heroEl = document.getElementById("landing-hero");
@@ -114,6 +222,147 @@
       return [game.title, game.console, game.month, game.year].map(value => String(value || "")).join("|");
     }
 
+    function encodeSharePayload(payload) {
+      const json = JSON.stringify(payload || {});
+      const bytes = new TextEncoder().encode(json);
+      let binary = "";
+      bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    }
+
+    function decodeSharePayload(value) {
+      try {
+        const padded = String(value || "").replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(String(value || "").length / 4) * 4, "=");
+        const binary = atob(padded);
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        return JSON.parse(new TextDecoder().decode(bytes));
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function compactSelections(selections = {}) {
+      const compact = {};
+
+      PICK_CATEGORY_KEYS.forEach((key) => {
+        const selection = selections[key];
+        if (!selection || !selection.title) return;
+
+        compact[key] = {
+          t: selection.title,
+          i: selection.imageUrl || "",
+          u: selection.url || "",
+          l: selection.linkMode || ""
+        };
+      });
+
+      return compact;
+    }
+
+    function expandSelections(compact = {}) {
+      const expanded = {};
+
+      PICK_CATEGORY_KEYS.forEach((key) => {
+        const selection = compact[key];
+        if (!selection || !selection.t) return;
+
+        expanded[key] = {
+          title: selection.t,
+          imageUrl: selection.i || "",
+          url: selection.u || "",
+          linkMode: selection.l || ""
+        };
+      });
+
+      return expanded;
+    }
+
+    function normalizeIncludedCategories(includedCategories = null) {
+      const normalized = {};
+
+      SHARE_CATEGORY_KEYS.forEach((key) => {
+        normalized[key] = !includedCategories || includedCategories[key] !== false;
+      });
+
+      return normalized;
+    }
+
+    function getShareableUrl(game, selections = {}, includedCategories = null) {
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams();
+      const normalizedIncluded = normalizeIncludedCategories(includedCategories);
+      const hiddenCategories = SHARE_CATEGORY_KEYS.filter((key) => normalizedIncluded[key] === false);
+      const compact = compactSelections(selections);
+
+      params.set("game", game.title || "");
+      if (game.console) {
+        params.set("console", game.console);
+      }
+      params.set("month", String(game.month || ""));
+      params.set("year", String(game.year || ""));
+
+      if (hiddenCategories.length) {
+        params.set("hide", hiddenCategories.join(","));
+      }
+
+      if (Object.keys(compact).length) {
+        params.set("picks", encodeSharePayload(compact));
+      }
+
+      url.search = params.toString();
+      url.hash = "";
+      return url.toString();
+    }
+
+    function readSharedUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      const title = params.get("game");
+      const month = Number(params.get("month"));
+      const year = Number(params.get("year"));
+      if (!title || !month || !year) return null;
+
+      const consoleName = params.get("console") || "";
+      const normalizedTitle = normalizeGameSearchText(title);
+      const normalizedConsole = normalizeLookupText(consoleName);
+      const game = games.find((candidate) =>
+        normalizeGameSearchText(candidate.title) === normalizedTitle &&
+        Number(candidate.month) === month &&
+        Number(candidate.year) === year &&
+        (!normalizedConsole || normalizeLookupText(candidate.console) === normalizedConsole)
+      );
+
+      if (!game) return null;
+
+      const hiddenCategories = (params.get("hide") || "")
+        .split(",")
+        .map((key) => key.trim())
+        .filter(Boolean);
+      const includedCategories = normalizeIncludedCategories();
+      hiddenCategories.forEach((key) => {
+        if (SHARE_CATEGORY_KEYS.includes(key)) {
+          includedCategories[key] = false;
+        }
+      });
+
+      return {
+        game,
+        selections: expandSelections(decodeSharePayload(params.get("picks")) || {}),
+        includedCategories
+      };
+    }
+
+    function clearShareableUrl() {
+      if (!window.location.search) return;
+
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = "";
+      window.history.replaceState({}, "", url.toString());
+    }
+
     function triggerResultsReveal() {
       const resultsEl = document.getElementById("results");
       resultsEl.classList.remove("results-random-reveal");
@@ -121,14 +370,15 @@
       resultsEl.classList.add("results-random-reveal");
     }
 
-    function showSpecificGame(game, { populateInput = false, animateResults = false } = {}) {
+    function showSpecificGame(game, options = {}) {
+      const { populateInput = false, animateResults = false } = options;
       const statusEl = document.getElementById("status");
       if (populateInput) {
         syncSearchInputs(game.title);
       }
 
       statusEl.textContent = `Showing ${game.title}` + (game.console ? ` on ${game.console}` : "");
-      renderResults([game], game.title);
+      renderResults([game], game.title, options);
 
       if (animateResults) {
         triggerResultsReveal();
@@ -175,6 +425,7 @@
       const spinInterval = 72;
       const startTime = Date.now();
 
+      clearShareableUrl();
       isRandomSpinning = true;
       setRandomButtonSpinning(true);
       setLandingChromeVisible(false);
@@ -554,7 +805,19 @@
           (data.cartoonsLoaded ? `, ${data.counts.cartoons} kids TV entries.` : ", kids TV not loaded.") +
           (unavailableSections.length ? ` Some sections could not load: ${unavailableSections.join(", ")}.` : "");
 
-        renderOnThisMonth();
+        const sharedState = readSharedUrlState();
+        if (sharedState) {
+          statusEl.textContent =
+            `Showing shared Retro Weekend for ${sharedState.game.title}` +
+            (sharedState.game.console ? ` on ${sharedState.game.console}` : "");
+          showSpecificGame(sharedState.game, {
+            populateInput: true,
+            initialSelections: sharedState.selections,
+            includedCategories: sharedState.includedCategories
+          });
+        } else {
+          renderOnThisMonth();
+        }
       } catch (err) {
         console.error("loadAllData error:", err);
         statusEl.textContent = "Error loading data. Check the sheet share settings and tab names, then reload.";
@@ -675,6 +938,7 @@
         return;
       }
 
+      clearShareableUrl();
       const matches = findGameMatches(games, query);
 
       if (!matches.length) {
@@ -701,6 +965,7 @@
 
     function handleExactTitleSelection(title) {
       const statusEl = document.getElementById("status");
+      clearShareableUrl();
       const normalizedTitle = normalizeGameSearchText(title);
       const exactMatches = games.filter((game) =>
         normalizeGameSearchText(game.title) === normalizedTitle
@@ -1002,17 +1267,27 @@
       return lines.join("\n");
     }
 
-    function renderHtmlShareCard(target, game, selections, gameImageUrl = "", includedCategories = null) {
+    function renderHtmlShareCard(target, game, selections, gameImageUrl = "", includedCategories = null, templateKey = "standard") {
       const items = getShareCardItems(game, selections, gameImageUrl, includedCategories).slice(0, 6);
+      const template = getShareCardTemplate(templateKey);
 
       target.innerHTML = "";
 
       const shell = document.createElement("div");
-      shell.className = "html-share-card";
+      shell.className = `html-share-card html-share-card--${template.key}`;
+      const templateBackground = template.backgroundUrl || "";
+      shell.style.setProperty("--share-card-bg", templateBackground ? `url("${templateBackground}")` : "none");
+
+      const content = document.createElement("div");
+      content.className = "html-share-card-content";
 
       const brand = document.createElement("div");
       brand.className = "html-share-card-brand";
       brand.textContent = "GAME REWIND UK";
+
+      const templateTag = document.createElement("div");
+      templateTag.className = "html-share-card-template-tag";
+      templateTag.textContent = template.label;
 
       const title = document.createElement("div");
       title.className = "html-share-card-title";
@@ -1074,11 +1349,19 @@
       footer.className = "html-share-card-footer";
       footer.textContent = "gamerewind.uk";
 
-      shell.appendChild(brand);
-      shell.appendChild(title);
-      shell.appendChild(meta);
-      shell.appendChild(grid);
-      shell.appendChild(footer);
+      if (template.showBrand !== false) {
+        content.appendChild(brand);
+      }
+      if (template.showTemplateTag !== false) {
+        content.appendChild(templateTag);
+      }
+      content.appendChild(title);
+      content.appendChild(meta);
+      content.appendChild(grid);
+      if (template.showFooter !== false) {
+        content.appendChild(footer);
+      }
+      shell.appendChild(content);
       target.appendChild(shell);
     }
 
@@ -1118,21 +1401,74 @@
       return y + (visibleLines.length * lineHeight);
     }
 
-    function loadShareCardImage(src) {
+    function loadImageFromDataUrl(src) {
       return new Promise((resolve) => {
-        if (!src) {
-          resolve(null);
-          return;
-        }
-
-        const canvasSafeSrc = getCanvasSafeImageUrl(src);
         const image = new Image();
-        image.crossOrigin = "anonymous";
-        image.referrerPolicy = "no-referrer";
         image.onload = () => resolve(image);
         image.onerror = () => resolve(null);
-        image.src = canvasSafeSrc;
+        image.src = src;
       });
+    }
+
+    function blobToDataUrl(blob) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function loadShareCardImage(src) {
+      if (!src) return null;
+
+      const canvasSafeSrc = getCanvasSafeImageUrl(src);
+      if (!canvasSafeSrc) return null;
+
+      if (canvasSafeSrc.startsWith("data:")) {
+        return loadImageFromDataUrl(canvasSafeSrc);
+      }
+
+      try {
+        const response = await fetch(canvasSafeSrc, {
+          mode: "cors",
+          referrerPolicy: "no-referrer"
+        });
+        if (!response.ok) return null;
+
+        const blob = await response.blob();
+        const dataUrl = await blobToDataUrl(blob);
+        return dataUrl ? loadImageFromDataUrl(dataUrl) : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function loadShareCardTemplateBackground(src) {
+      const value = String(src || "").trim();
+      if (!value) return null;
+
+      if (value.startsWith("data:")) {
+        return loadImageFromDataUrl(value);
+      }
+
+      let imageSrc = value;
+      try {
+        imageSrc = new URL(value, window.location.href).href;
+      } catch (err) {
+        imageSrc = value;
+      }
+
+      try {
+        const response = await fetch(imageSrc);
+        if (!response.ok) return null;
+
+        const blob = await response.blob();
+        const dataUrl = await blobToDataUrl(blob);
+        return dataUrl ? loadImageFromDataUrl(dataUrl) : null;
+      } catch (err) {
+        return null;
+      }
     }
 
     function getCanvasSafeImageUrl(src) {
@@ -1142,10 +1478,23 @@
       }
 
       if (!/^https?:\/\//i.test(value)) {
-        return value;
+        try {
+          return new URL(value, window.location.href).href;
+        } catch (err) {
+          return value;
+        }
       }
 
       if (value.includes("images.weserv.nl/")) {
+        return value;
+      }
+
+      try {
+        const url = new URL(value);
+        if (url.origin === window.location.origin) {
+          return url.href;
+        }
+      } catch (err) {
         return value;
       }
 
@@ -1169,111 +1518,178 @@
       ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
     }
 
-    async function drawRetroWeekendShareCard(canvas, game, selections, gameImageUrl = "", includedCategories = null) {
+    function drawCanvasImageCover(ctx, image, x, y, width, height) {
+      const imageRatio = image.width / image.height;
+      const boxRatio = width / height;
+      let sourceWidth = image.width;
+      let sourceHeight = image.height;
+      let sourceX = 0;
+      let sourceY = 0;
+
+      if (imageRatio > boxRatio) {
+        sourceWidth = image.height * boxRatio;
+        sourceX = (image.width - sourceWidth) / 2;
+      } else {
+        sourceHeight = image.width / boxRatio;
+        sourceY = (image.height - sourceHeight) / 2;
+      }
+
+      ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+    }
+
+    async function drawRetroWeekendShareCard(canvas, game, selections, gameImageUrl = "", includedCategories = null, templateKey = "standard") {
       const ctx = canvas.getContext("2d");
       const width = 1080;
       const height = 1920;
-      const margin = 72;
       const items = getShareCardItems(game, selections, gameImageUrl, includedCategories).slice(0, 6);
-      const loadedImages = await Promise.all(items.map((item) => loadShareCardImage(item.imageUrl)));
+      const template = getShareCardTemplate(templateKey);
+      const loadedImages = await Promise.all([
+        loadShareCardTemplateBackground(getShareCardTemplateExportBackground(template)),
+        ...items.map((item) => loadShareCardImage(item.imageUrl))
+      ]);
+      const backgroundImage = loadedImages[0];
+      const itemImages = loadedImages.slice(1);
+      const box = template.box;
 
       canvas.width = width;
       canvas.height = height;
 
-      const bg = ctx.createLinearGradient(0, 0, width, height);
-      bg.addColorStop(0, "#080914");
-      bg.addColorStop(0.55, "#121223");
-      bg.addColorStop(1, "#071a22");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, width, height);
+      if (backgroundImage) {
+        drawCanvasImageCover(ctx, backgroundImage, 0, 0, width, height);
+      } else if (template.key === "standard") {
+        const bg = ctx.createLinearGradient(0, 0, width, height);
+        bg.addColorStop(0, "#080914");
+        bg.addColorStop(0.55, "#121223");
+        bg.addColorStop(1, "#071a22");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
 
-      ctx.strokeStyle = "rgba(255, 246, 216, 0.12)";
-      ctx.lineWidth = 1;
-      for (let y = 0; y < height; y += 18) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+        ctx.strokeStyle = "rgba(255, 246, 216, 0.12)";
+        ctx.lineWidth = 1;
+        for (let y = 0; y < height; y += 18) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+        for (let x = 0; x < width; x += 36) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#46dfff";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(36, 36, width - 72, height - 72);
+        ctx.strokeStyle = "#ffd84a";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(52, 52, width - 104, height - 104);
+      } else {
+        ctx.fillStyle = "#080914";
+        ctx.fillRect(0, 0, width, height);
       }
-      for (let x = 0; x < width; x += 36) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
+
+      if (template.panel && template.panel !== "rgba(0, 0, 0, 0)") {
+        ctx.fillStyle = template.panel;
+        ctx.fillRect(box.x, box.y, box.width, box.height);
       }
 
-      ctx.strokeStyle = "#46dfff";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(36, 36, width - 72, height - 72);
-      ctx.strokeStyle = "#ffd84a";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(52, 52, width - 104, height - 104);
+      const inset = 28;
+      const contentX = box.x + inset;
+      const contentWidth = box.width - (inset * 2);
+      let cursorY = box.y + inset;
 
-      ctx.fillStyle = "#25f4a0";
-      ctx.font = "700 28px 'Chakra Petch', sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("GAME REWIND UK", width / 2, 112);
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "700 58px 'Chakra Petch', sans-serif";
-      ctx.fillText("YOUR RETRO WEEKEND", width / 2, 210);
+      if (template.showBrand !== false) {
+        ctx.fillStyle = template.accent;
+        ctx.font = "700 24px 'Chakra Petch', sans-serif";
+        ctx.fillText("GAME REWIND UK", box.x + (box.width / 2), cursorY + 24);
+        cursorY += 34;
+      }
 
-      ctx.fillStyle = "#ffd84a";
-      ctx.font = "700 34px 'Chakra Petch', sans-serif";
-      ctx.fillText(`${monthNameFromNumber(game.month)} ${game.year}`, width / 2, 268);
+      if (template.showTemplateTag !== false) {
+        ctx.fillStyle = template.muted;
+        ctx.font = "700 22px 'Chakra Petch', sans-serif";
+        ctx.fillText(template.label.toUpperCase(), box.x + (box.width / 2), cursorY + 24);
+        cursorY += 34;
+      }
+
+      ctx.fillStyle = template.text;
+      ctx.font = "700 46px 'Chakra Petch', sans-serif";
+      ctx.fillText("YOUR RETRO WEEKEND", box.x + (box.width / 2), cursorY + 56);
+
+      ctx.fillStyle = template.muted;
+      ctx.font = "700 30px 'Chakra Petch', sans-serif";
+      ctx.fillText(`${monthNameFromNumber(game.month)} ${game.year}`, box.x + (box.width / 2), cursorY + 100);
       ctx.textAlign = "left";
 
-      ctx.fillStyle = "rgba(255, 246, 216, 0.08)";
-      ctx.fillRect(margin, 330, width - (margin * 2), 2);
+      cursorY += 142;
 
-      let itemY = 390;
-      const gap = 24;
+      if (!items.length) {
+        ctx.fillStyle = template.text;
+        ctx.font = "700 28px 'Chakra Petch', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("No categories selected.", box.x + (box.width / 2), cursorY + 80);
+        ctx.textAlign = "left";
+      }
+
+      const gap = 18;
       const columns = 3;
-      const cardWidth = (width - (margin * 2) - (gap * (columns - 1))) / columns;
-      const imageHeight = Math.round(cardWidth * 1.5);
-      const textBlockHeight = 124;
-      const itemHeight = imageHeight + textBlockHeight;
+      const cardWidth = (contentWidth - (gap * (columns - 1))) / columns;
+      const footerSpace = template.showFooter === false ? 12 : 70;
+      const remainingHeight = Math.max(360, box.y + box.height - cursorY - footerSpace);
+      const rows = Math.max(1, Math.ceil(items.length / columns));
+      const itemHeight = Math.min(390, (remainingHeight - (gap * (rows - 1))) / rows);
+      const imageHeight = Math.max(130, itemHeight - 112);
 
       items.forEach((item, index) => {
         const column = index % columns;
         const row = Math.floor(index / columns);
-        const x = margin + (column * (cardWidth + gap));
-        const y = itemY + (row * (itemHeight + 24));
-        const image = loadedImages[index];
+        const x = contentX + (column * (cardWidth + gap));
+        const y = cursorY + (row * (itemHeight + gap));
+        const image = itemImages[index];
 
-        ctx.fillStyle = "rgba(255, 246, 216, 0.06)";
+        ctx.fillStyle = template.key === "web-y2k" || template.key === "game-box"
+          ? "rgba(255, 255, 255, 0.72)"
+          : "rgba(0, 0, 0, 0.48)";
         ctx.fillRect(x, y, cardWidth, itemHeight);
-        ctx.strokeStyle = "rgba(255, 246, 216, 0.24)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, cardWidth, itemHeight);
+        if (template.key !== "game-box") {
+          ctx.strokeStyle = template.muted;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, cardWidth, itemHeight);
+        }
 
         if (image) {
           try {
             drawCanvasImageContain(ctx, image, x, y, cardWidth, imageHeight);
           } catch (err) {
-            ctx.fillStyle = "rgba(70, 223, 255, 0.12)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
             ctx.fillRect(x, y, cardWidth, imageHeight);
           }
         } else {
-          ctx.fillStyle = "rgba(70, 223, 255, 0.12)";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
           ctx.fillRect(x, y, cardWidth, imageHeight);
-          ctx.fillStyle = "#46dfff";
-          ctx.font = "700 28px 'Chakra Petch', sans-serif";
-          ctx.fillText(item.label.toUpperCase(), x + 22, y + 118);
+          ctx.fillStyle = template.accent;
+          ctx.font = "700 22px 'Chakra Petch', sans-serif";
+          ctx.fillText(item.label.toUpperCase(), x + 16, y + 76);
         }
 
-        ctx.fillStyle = "#46dfff";
-        ctx.font = "700 20px 'Chakra Petch', sans-serif";
-        ctx.fillText(item.label.toUpperCase(), x + 16, y + imageHeight + 32);
+        ctx.fillStyle = template.accent;
+        ctx.font = "700 18px 'Chakra Petch', sans-serif";
+        ctx.fillText(item.label.toUpperCase(), x + 14, y + imageHeight + 28);
 
-        ctx.fillStyle = "#fff6d8";
-        ctx.font = "600 24px 'Chakra Petch', sans-serif";
-        wrapCanvasText(ctx, item.title, x + 16, y + imageHeight + 66, cardWidth - 32, 30, 3);
+        ctx.fillStyle = template.text;
+        ctx.font = "700 21px 'Chakra Petch', sans-serif";
+        wrapCanvasText(ctx, item.title, x + 14, y + imageHeight + 58, cardWidth - 28, 26, 3);
       });
 
-      ctx.fillStyle = "#ff405c";
-      ctx.font = "700 26px 'Chakra Petch', sans-serif";
-      ctx.fillText("gamerewind.uk", margin, height - 92);
+      if (template.showFooter !== false) {
+        ctx.fillStyle = template.footer;
+        ctx.font = "700 24px 'Chakra Petch', sans-serif";
+        ctx.fillText("gamerewind.uk", contentX, box.y + box.height - 24);
+      }
 
       return canvas.toDataURL("image/png");
     }
@@ -1292,19 +1708,12 @@
       link.remove();
     }
 
-    function renderRetroWeekendCard(game, initialSelections = {}) {
+    function renderRetroWeekendCard(game, initialSelections = {}, initialIncludedCategories = null) {
       const card = document.createElement("div");
       card.className = "card retro-weekend-card";
       let currentSelections = initialSelections;
       let gameCoverUrl = "";
-      const includedCategories = {
-        game: true,
-        cinema: true,
-        rental: true,
-        music: true,
-        cartoons: true,
-        wwe: true
-      };
+      const includedCategories = normalizeIncludedCategories(initialIncludedCategories);
 
       const kicker = document.createElement("div");
       kicker.className = "retro-weekend-kicker";
@@ -1317,10 +1726,18 @@
       const titleRow = document.createElement("div");
       titleRow.className = "retro-weekend-title-row";
 
+      const titleActions = document.createElement("div");
+      titleActions.className = "retro-weekend-title-actions";
+
       const createShareButton = document.createElement("button");
       createShareButton.type = "button";
       createShareButton.className = "share-card-button";
       createShareButton.textContent = "Create share card";
+
+      const copyLinkButton = document.createElement("button");
+      copyLinkButton.type = "button";
+      copyLinkButton.className = "share-card-button is-secondary";
+      copyLinkButton.textContent = "Copy link";
 
       const copy = document.createElement("div");
       copy.className = "retro-weekend-copy";
@@ -1351,10 +1768,11 @@
 
         const input = document.createElement("input");
         input.type = "checkbox";
-        input.checked = true;
+        input.checked = includedCategories[option.key] !== false;
         input.addEventListener("change", () => {
           includedCategories[option.key] = input.checked;
           shareCardDataUrl = "";
+          syncCurrentShareUrl();
           renderTiles();
           if (!shareModal.classList.contains("is-hidden")) {
             createShareCard();
@@ -1395,6 +1813,20 @@
       const sharePreview = document.createElement("div");
       sharePreview.className = "share-card-preview";
 
+      const templateControl = document.createElement("label");
+      templateControl.className = "share-template-control";
+      templateControl.textContent = "Card style";
+
+      const templateSelect = document.createElement("select");
+      templateSelect.className = "share-template-select";
+      SHARE_CARD_TEMPLATES.forEach((template) => {
+        const option = document.createElement("option");
+        option.value = template.key;
+        option.textContent = template.label;
+        templateSelect.appendChild(option);
+      });
+      templateControl.appendChild(templateSelect);
+
       const shareActions = document.createElement("div");
       shareActions.className = "share-card-actions";
 
@@ -1414,10 +1846,13 @@
       closeShareButton.textContent = "Close";
 
       let shareCardDataUrl = "";
+      let selectedTemplateKey = SHARE_CARD_TEMPLATES[0].key;
 
       card.appendChild(kicker);
       titleRow.appendChild(title);
-      titleRow.appendChild(createShareButton);
+      titleActions.appendChild(createShareButton);
+      titleActions.appendChild(copyLinkButton);
+      titleRow.appendChild(titleActions);
       card.appendChild(titleRow);
       card.appendChild(copy);
       card.appendChild(includePanel);
@@ -1427,6 +1862,7 @@
       shareActions.appendChild(downloadShareButton);
       shareActions.appendChild(copyShareButton);
       shareModalPanel.appendChild(shareModalHeader);
+      shareModalPanel.appendChild(templateControl);
       shareModalPanel.appendChild(sharePreview);
       shareModalPanel.appendChild(shareActions);
       shareModal.appendChild(shareModalPanel);
@@ -1441,13 +1877,53 @@
         createShareButton.disabled = true;
         createShareButton.textContent = "Opening...";
         try {
-          renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories);
+          renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
           shareModal.classList.remove("is-hidden");
           document.body.classList.add("has-share-modal");
           shareModal.focus();
         } finally {
           createShareButton.disabled = false;
           createShareButton.textContent = "Create share card";
+        }
+      }
+
+      function syncCurrentShareUrl() {
+        if (!window.location.search) return;
+
+        window.history.replaceState({}, "", getShareableUrl(game, currentSelections, includedCategories));
+      }
+
+      async function copyShareLink() {
+        const url = getShareableUrl(game, currentSelections, includedCategories);
+
+        function showCopiedFeedback() {
+          copyLinkButton.textContent = "Link copied";
+          window.setTimeout(() => {
+            copyLinkButton.textContent = "Copy link";
+          }, 1400);
+        }
+
+        try {
+          await navigator.clipboard.writeText(url);
+          showCopiedFeedback();
+        } catch (err) {
+          const input = document.createElement("input");
+          input.value = url;
+          input.setAttribute("readonly", "");
+          input.style.position = "fixed";
+          input.style.left = "-9999px";
+          document.body.appendChild(input);
+          input.select();
+
+          try {
+            if (document.execCommand("copy")) {
+              showCopiedFeedback();
+            } else {
+              window.prompt("Copy your Retro Weekend link:", url);
+            }
+          } finally {
+            input.remove();
+          }
         }
       }
 
@@ -1516,12 +1992,28 @@
       });
 
       createShareButton.addEventListener("click", createShareCard);
+      copyLinkButton.addEventListener("click", copyShareLink);
+      templateSelect.addEventListener("change", () => {
+        selectedTemplateKey = templateSelect.value;
+        shareCardDataUrl = "";
+        renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+      });
       downloadShareButton.addEventListener("click", async () => {
-        if (!shareCardDataUrl) {
-          const canvas = document.createElement("canvas");
-          shareCardDataUrl = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories);
+        downloadShareButton.disabled = true;
+        downloadShareButton.textContent = "Preparing...";
+
+        try {
+          if (!shareCardDataUrl) {
+            const canvas = document.createElement("canvas");
+            shareCardDataUrl = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+          }
+          downloadShareCard(shareCardDataUrl, game);
+        } catch (err) {
+          window.alert(`Download failed: ${err?.message || "Try another card style or reload the page."}`);
+        } finally {
+          downloadShareButton.disabled = false;
+          downloadShareButton.textContent = "Download PNG";
         }
-        downloadShareCard(shareCardDataUrl, game);
       });
       copyShareButton.addEventListener("click", copyShareText);
       closeShareButton.addEventListener("click", closeShareModal);
@@ -1543,6 +2035,7 @@
         update(nextSelections) {
           currentSelections = nextSelections || {};
           shareCardDataUrl = "";
+          syncCurrentShareUrl();
           renderTiles();
           if (!shareModal.classList.contains("is-hidden")) {
             createShareCard();
@@ -1551,11 +2044,12 @@
       };
     }
 
-    function renderResults(matches, query) {
+    function renderResults(matches, query, options = {}) {
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
       clearShareModals();
       resultsEl.innerHTML = "";
+      const sharedGameKey = options.game ? getGameKey(options.game) : matches.length === 1 ? getGameKey(matches[0]) : "";
 
       if (!matches.length) {
         const div = document.createElement("div");
@@ -1624,9 +2118,14 @@ getCoverUrlForGame(game).then((url) => {
           { key: "wwe", label: "Wrestling", items: keyWwe, linkMode: undefined }
         ];
         const defaultSelections = getDefaultRetroWeekendSelections(game);
-        let savedSelections = {};
+        const isSharedGame = sharedGameKey && getGameKey(game) === sharedGameKey;
+        let savedSelections = isSharedGame ? { ...(options.initialSelections || {}) } : {};
         let effectiveSelections = mergeRetroWeekendSelections(defaultSelections, savedSelections);
-        const retroWeekendController = renderRetroWeekendCard(game, effectiveSelections);
+        const retroWeekendController = renderRetroWeekendCard(
+          game,
+          effectiveSelections,
+          isSharedGame ? options.includedCategories : null
+        );
         resultsEl.appendChild(retroWeekendController.card);
 
         function section(titleText, items, emptyText, linkMode, enableToggle = false, category = null) {
@@ -1854,6 +2353,7 @@ getCoverUrlForGame(game).then((url) => {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
 
+      clearShareableUrl();
       gameInput.value = "";
       resultsGameInput.value = "";
       clearSuggestions();
@@ -1876,12 +2376,14 @@ getCoverUrlForGame(game).then((url) => {
 
     document.getElementById("browse-by-date").addEventListener("click", (e) => {
       e.preventDefault();
+      clearShareableUrl();
       clearSuggestions();
       renderBrowseByDate();
     });
 
     document.getElementById("browse-by-console").addEventListener("click", (e) => {
       e.preventDefault();
+      clearShareableUrl();
       clearSuggestions();
       renderBrowseByConsole();
     });

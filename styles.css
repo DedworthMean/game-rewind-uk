@@ -609,6 +609,12 @@ input[type="text"]:focus,
   margin-top: 0;
 }
 
+.retro-weekend-title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .retro-weekend-copy {
   margin: 0.35rem 0 1rem;
   color: var(--muted);
@@ -799,6 +805,36 @@ input[type="text"]:focus,
   background: rgba(0, 0, 0, 0.38);
 }
 
+.share-template-control {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.share-template-select {
+  min-height: 42px;
+  padding: 0.45rem 0.65rem;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: #080a12;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.share-template-select:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(70, 223, 255, 0.18);
+}
+
 .html-share-card {
   padding: 1rem;
   border: 2px solid var(--yellow);
@@ -811,6 +847,16 @@ input[type="text"]:focus,
 .html-share-card-brand {
   color: var(--green);
   font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.html-share-card-template-tag {
+  margin-top: 0.25rem;
+  color: var(--yellow);
+  font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-align: center;
@@ -910,6 +956,214 @@ input[type="text"]:focus,
   color: var(--red);
   font-size: 0.8rem;
   font-weight: 800;
+}
+
+.html-share-card {
+  position: relative;
+  aspect-ratio: 1080 / 1920;
+  overflow: hidden;
+  padding: 0;
+  border-color: rgba(255, 246, 216, 0.28);
+  background: #080914 var(--share-card-bg) center / cover no-repeat;
+}
+
+.html-share-card--standard {
+  border-color: var(--yellow);
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 18px),
+    linear-gradient(135deg, rgba(255, 64, 92, 0.1), transparent 36%),
+    linear-gradient(315deg, rgba(70, 223, 255, 0.12), transparent 42%),
+    #090b16;
+}
+
+.html-share-card-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 1rem;
+}
+
+.html-share-card--standard .html-share-card-content {
+  left: 6.7%;
+  top: 3.75%;
+  width: 86.7%;
+  height: 92.5%;
+}
+
+.html-share-card--standard::before {
+  content: "";
+  position: absolute;
+  inset: 1.65%;
+  border: 3px solid var(--cyan);
+  pointer-events: none;
+}
+
+.html-share-card--standard::after {
+  content: "";
+  position: absolute;
+  inset: 2.4%;
+  border: 2px solid var(--yellow);
+  pointer-events: none;
+}
+
+.html-share-card--magazine .html-share-card-content {
+  left: 28.7%;
+  top: 20.3%;
+  width: 68.5%;
+  height: 71.9%;
+}
+
+.html-share-card--80s-movie .html-share-card-content {
+  left: 7.4%;
+  top: 29.2%;
+  width: 85.2%;
+  height: 66.7%;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.html-share-card--game-box .html-share-card-content {
+  left: 8.5%;
+  top: 17.6%;
+  width: 83%;
+  height: 53.5%;
+}
+
+.html-share-card--web-y2k .html-share-card-content {
+  left: 23.7%;
+  top: 16.6%;
+  width: 51.9%;
+  height: 49%;
+  background: #f3f3f3;
+}
+
+.html-share-card--teletext .html-share-card-content {
+  left: 4.6%;
+  top: 13%;
+  width: 90.7%;
+  height: 39.6%;
+}
+
+.html-share-card--vhs-tape .html-share-card-content {
+  left: 10.2%;
+  top: 27.1%;
+  width: 58.3%;
+  height: 39.6%;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.html-share-card--magazine .html-share-card-label {
+  color: #ff1714;
+}
+
+.html-share-card--magazine .html-share-card-meta {
+  color: var(--yellow);
+}
+
+.html-share-card--80s-movie .html-share-card-brand,
+.html-share-card--80s-movie .html-share-card-label {
+  color: #ff4ac4;
+}
+
+.html-share-card--80s-movie .html-share-card-template-tag,
+.html-share-card--80s-movie .html-share-card-meta {
+  color: #ff7a32;
+}
+
+.html-share-card--game-box .html-share-card-label,
+.html-share-card--game-box .html-share-card-title,
+.html-share-card--game-box .html-share-card-name {
+  color: #111827;
+}
+
+.html-share-card--game-box .html-share-card-meta {
+  color: #c01820;
+}
+
+.html-share-card--game-box .html-share-card-label {
+  color: #0b55b8;
+}
+
+.html-share-card--web-y2k .html-share-card-brand,
+.html-share-card--web-y2k .html-share-card-label,
+.html-share-card--web-y2k .html-share-card-title,
+.html-share-card--web-y2k .html-share-card-name,
+.html-share-card--web-y2k .html-share-card-footer {
+  color: #063075;
+}
+
+.html-share-card--web-y2k .html-share-card-template-tag,
+.html-share-card--web-y2k .html-share-card-meta {
+  color: #0d4fbd;
+}
+
+.html-share-card--teletext .html-share-card-brand,
+.html-share-card--teletext .html-share-card-label {
+  color: #00ffff;
+}
+
+.html-share-card--teletext .html-share-card-template-tag,
+.html-share-card--teletext .html-share-card-meta {
+  color: #ffff00;
+}
+
+.html-share-card--vhs-tape .html-share-card-label,
+.html-share-card--vhs-tape .html-share-card-title,
+.html-share-card--vhs-tape .html-share-card-name {
+  color: #fff6d8;
+}
+
+.html-share-card--vhs-tape .html-share-card-meta {
+  color: #f0c07a;
+}
+
+.html-share-card .html-share-card-title {
+  margin-top: 0;
+  font-size: clamp(1rem, 3.4vw, 1.9rem);
+}
+
+.html-share-card .html-share-card-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.html-share-card .html-share-card-tile {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.html-share-card--game-box .html-share-card-tile,
+.html-share-card--web-y2k .html-share-card-tile,
+.html-share-card--vhs-tape .html-share-card-tile {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.html-share-card .html-share-card-image {
+  flex: 1 1 auto;
+  min-height: 5rem;
+}
+
+.html-share-card .html-share-card-label {
+  padding: 0.4rem 0.45rem 0;
+  font-size: 0.58rem;
+}
+
+.html-share-card .html-share-card-name {
+  padding: 0.15rem 0.45rem 0.45rem;
+  font-size: 0.7rem;
+}
+
+.html-share-card .html-share-card-footer {
+  margin-top: 0.45rem;
 }
 
 @media (max-width: 620px) {
