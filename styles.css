@@ -706,6 +706,7 @@ form {
 }
 
 input[type="text"],
+input[type="date"],
 .browse-select {
   width: 100%;
   min-height: 48px;
@@ -722,6 +723,7 @@ input[type="text"]::placeholder {
 }
 
 input[type="text"]:focus,
+input[type="date"]:focus,
 .browse-select:focus {
   border-color: var(--cyan);
   box-shadow: 0 0 0 3px rgba(70, 223, 255, 0.18);
@@ -829,6 +831,12 @@ input[type="text"]:focus,
 .nav-link-random:focus-visible {
   border-color: var(--yellow);
   color: var(--yellow);
+}
+
+.nav-link-birthday:hover,
+.nav-link-birthday:focus-visible {
+  border-color: var(--violet);
+  color: var(--violet);
 }
 
 .nav-link-random.is-spinning {
@@ -1638,6 +1646,142 @@ input[type="text"]:focus,
   padding-right: 0.4rem;
 }
 
+.birthday-card {
+  border-color: rgba(166, 83, 255, 0.55);
+}
+
+.birthday-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.birthday-date-input {
+  color-scheme: dark;
+}
+
+.birthday-timeline-wrap {
+  margin-top: 1rem;
+}
+
+.birthday-summary {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 246, 216, 0.16);
+  color: var(--yellow);
+  font-weight: 800;
+  line-height: 1.4;
+  background: rgba(255, 246, 216, 0.055);
+}
+
+.birthday-timeline {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.birthday-year-card {
+  display: grid;
+  grid-template-columns: minmax(86px, 0.22fr) minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 246, 216, 0.16);
+  background:
+    linear-gradient(90deg, rgba(166, 83, 255, 0.14), transparent 32%),
+    rgba(255, 246, 216, 0.045);
+}
+
+.birthday-year-marker {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.birthday-year {
+  color: #ffffff;
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.birthday-age {
+  color: var(--green);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-year-body {
+  min-width: 0;
+}
+
+.birthday-year-title {
+  color: #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-year-meta,
+.birthday-culture-line {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.birthday-more {
+  margin-top: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--yellow);
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.birthday-more:hover,
+.birthday-more:focus-visible {
+  outline: none;
+  color: var(--green);
+}
+
+.birthday-game-list {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.birthday-launch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.birthday-launch-pill {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--yellow);
+  background: rgba(255, 216, 74, 0.12);
+  color: var(--yellow);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-launch-pill:hover,
+.birthday-launch-pill:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.birthday-culture-line {
+  margin-top: 0.55rem;
+  color: var(--cyan);
+  font-weight: 800;
+}
+
 .console-choice-btn {
   margin: 0.35rem 0.35rem 0 0;
 }
@@ -1771,8 +1915,15 @@ input[type="text"]:focus,
   }
 
   form,
-  .nav-links {
+  .nav-links,
+  .birthday-form,
+  .birthday-year-card {
     flex-direction: column;
+  }
+
+  .birthday-form,
+  .birthday-year-card {
+    grid-template-columns: 1fr;
   }
 
   .search-wrapper .suggestions,

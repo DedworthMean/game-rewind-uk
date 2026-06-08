@@ -159,6 +159,14 @@ Confirmed:
 - Normal game result pages still show the Retro Weekend card and category pick controls after the shared culture-section renderer change.
 - Missing or failed images now show a consistent `Image pending` placeholder for game art, console launch art, launch game thumbnails, Retro Weekend culture tiles, and share-card previews/exports.
 
+Experimental local addition after the live push:
+
+- `Birthday List` nav tool.
+- User enters a full birth date.
+- The app uses the birthday month and birth year to build a year-by-year archive timeline from that year onward.
+- Each timeline year shows age, game links, console launches when present, and culture counts for cinema, rental, music, kids TV, and wrestling.
+- This is intentionally self-contained so it can be removed if the feature does not feel right.
+
 Known data note:
 
 - Nintendo DS currently has `0` launch-window games because the Games sheet has not yet been updated with March/April 2005 DS games. The feature is ready; once those rows are added, they should appear automatically.
