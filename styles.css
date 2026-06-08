@@ -295,6 +295,376 @@ button {
   line-height: 1.55;
 }
 
+.month-issue {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1rem, 3vw, 1.35rem);
+  border: 2px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(255, 216, 74, 0.16), transparent 38%),
+    linear-gradient(135deg, rgba(255, 64, 92, 0.16), transparent 35%),
+    rgba(8, 10, 18, 0.92);
+  box-shadow: 0 18px 46px var(--shadow);
+}
+
+.month-issue::after {
+  content: "NEW ISSUE";
+  position: absolute;
+  right: 1rem;
+  top: 0.85rem;
+  color: rgba(255, 246, 216, 0.08);
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: clamp(1.15rem, 4vw, 2.4rem);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.month-issue-kicker {
+  color: var(--green);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.month-issue-title {
+  margin-top: 0.35rem;
+  color: #ffffff;
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: clamp(1.4rem, 4vw, 2.8rem);
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 var(--red), 6px 6px 0 rgba(83, 109, 255, 0.5);
+}
+
+.month-issue-copy {
+  max-width: 56rem;
+  margin-top: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.month-issue-strap {
+  display: inline-flex;
+  margin-top: 1rem;
+  padding: 0.38rem 0.55rem;
+  border: 1px solid rgba(255, 246, 216, 0.18);
+  color: var(--yellow);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.month-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.month-feature-card {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 2px solid rgba(255, 246, 216, 0.18);
+  background:
+    linear-gradient(180deg, rgba(70, 223, 255, 0.08), transparent 28%),
+    rgba(8, 10, 18, 0.9);
+}
+
+.month-feature-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.month-feature-title {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.month-feature-subtitle {
+  margin-top: 0.15rem;
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.month-feature-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid var(--line);
+  background: rgba(255, 246, 216, 0.06);
+}
+
+.month-feature-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.month-feature-cover-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  padding: 0.8rem;
+  color: var(--muted);
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.month-feature-headline {
+  margin-top: 0.65rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.month-feature-headline:hover,
+.month-feature-headline:focus-visible {
+  outline: none;
+  color: var(--yellow);
+}
+
+.month-feature-card .month-games-list {
+  columns: 1;
+  margin-top: 0.65rem;
+  font-size: 0.9rem;
+}
+
+.console-launch-promo {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.52fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+  border: 2px solid var(--yellow);
+  background:
+    linear-gradient(135deg, rgba(255, 216, 74, 0.16), transparent 36%),
+    rgba(8, 10, 18, 0.94);
+  color: inherit;
+  text-align: left;
+  box-shadow: 0 18px 46px var(--shadow);
+}
+
+.console-launch-promo:hover,
+.console-launch-promo:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+}
+
+.console-launch-promo-art {
+  display: grid;
+  aspect-ratio: 16 / 9;
+  min-height: 130px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 246, 216, 0.18);
+  color: var(--muted);
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  background: rgba(255, 246, 216, 0.07);
+}
+
+.console-launch-promo-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.console-launch-promo-copy {
+  align-self: center;
+  min-width: 0;
+}
+
+.console-launch-kicker {
+  color: var(--green);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.console-launch-promo-title {
+  margin-top: 0.35rem;
+  color: #ffffff;
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: clamp(1.05rem, 3vw, 1.9rem);
+  line-height: 1.15;
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 var(--red), 6px 6px 0 rgba(83, 109, 255, 0.5);
+}
+
+.console-launch-meta {
+  margin-top: 0.7rem;
+  color: var(--yellow);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.console-launch-result {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.35rem);
+  border: 2px solid var(--cyan);
+  background:
+    linear-gradient(135deg, rgba(70, 223, 255, 0.14), transparent 34%),
+    linear-gradient(315deg, rgba(255, 64, 92, 0.14), transparent 38%),
+    rgba(8, 10, 18, 0.94);
+  box-shadow: 0 24px 70px var(--shadow);
+}
+
+.console-launch-result-art {
+  display: grid;
+  aspect-ratio: 16 / 9;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 246, 216, 0.22);
+  color: var(--muted);
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  background: rgba(255, 246, 216, 0.07);
+}
+
+.console-launch-result-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.console-launch-result-copy h1 {
+  margin: 0.55rem 0 0;
+  color: #ffffff;
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: clamp(1.55rem, 4vw, 3rem);
+  line-height: 1.08;
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 var(--red), 6px 6px 0 rgba(83, 109, 255, 0.5);
+}
+
+.console-launch-result-copy p {
+  max-width: 62rem;
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.console-launch-games-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.console-launch-game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 0.8rem;
+}
+
+.console-launch-game-card {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.console-launch-game-card:hover .retro-weekend-name,
+.console-launch-game-card:focus-visible .retro-weekend-name {
+  color: var(--yellow);
+}
+
+.console-launch-game-card:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.console-launch-game-thumb {
+  position: relative;
+  display: grid;
+  aspect-ratio: 2 / 3;
+  place-items: center;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  color: var(--muted);
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  background: rgba(255, 246, 216, 0.07);
+}
+
+.console-launch-game-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  background:
+    linear-gradient(135deg, rgba(255, 216, 74, 0.1), transparent 34%),
+    rgba(255, 246, 216, 0.05);
+}
+
+.image-pending-label {
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.image-pending-text {
+  color: var(--yellow);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.console-launch-empty {
+  border: 1px solid rgba(255, 216, 74, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 216, 74, 0.1), transparent 34%),
+    rgba(255, 246, 216, 0.05);
+}
+
 .search-panel {
   display: grid;
   grid-template-columns: minmax(220px, 0.72fr) minmax(280px, 1fr);
@@ -917,6 +1287,7 @@ input[type="text"]:focus,
   justify-content: center;
   aspect-ratio: 2 / 3;
   overflow: hidden;
+  margin: 1px;
   background: rgba(70, 223, 255, 0.08);
 }
 
@@ -1347,6 +1718,10 @@ input[type="text"]:focus,
   .month-games-list {
     columns: 1;
   }
+
+  .console-launch-promo {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 620px) {
@@ -1370,8 +1745,19 @@ input[type="text"]:focus,
 
   .hero,
   .search-panel,
-  .card {
+  .card,
+  .console-launch-result {
     padding: 0.85rem;
+  }
+
+  .console-launch-result-copy h1 {
+    font-size: 1.5rem;
+    text-shadow: 2px 2px 0 var(--red), 4px 4px 0 rgba(83, 109, 255, 0.55);
+  }
+
+  .console-launch-promo-title {
+    font-size: 1rem;
+    text-shadow: 2px 2px 0 var(--red), 4px 4px 0 rgba(83, 109, 255, 0.55);
   }
 
   .hero-title {

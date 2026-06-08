@@ -5,7 +5,8 @@
     music: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Music",
     wwe: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/WWE",
     rental: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Rental",
-    cartoons: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Cartoons"
+    cartoons: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Cartoons",
+    console: "https://opensheet.elk.sh/1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU/Console"
   };
   const GOOGLE_SHEET_ID = "1rEjpzvAYKZiBsu_jzZKHSZkeGzEate3ZBj0VKwuzefU";
   const RETRO_WEEKEND_GID = "435750815";
@@ -254,6 +255,35 @@
       .filter((entry) => entry.month && entry.year);
   }
 
+  function parseConsoleLaunches(rows) {
+    const dateKeys = ["Date", "UK Date", "UK Release Date", "Launch Date", "Month"];
+    const consoleKeys = ["Console", "System", "Format"];
+    const headlineKeys = ["Headline", "Title", "Launch", "Name"];
+    const descriptionKeys = ["Description", "Copy", "Text", "Body"];
+    const imageKeys = ["Image", "Image URL", "Image Link", "Art", "Artwork"];
+
+    return rows
+      .map((row) => {
+        const dateRaw = dateKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const consoleRaw = consoleKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const headlineRaw = headlineKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const descriptionRaw = descriptionKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const imageRaw = imageKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const { month, year } = parseMonthYear(dateRaw);
+        const consoleName = String(consoleRaw || "").trim();
+
+        return {
+          console: consoleName,
+          headline: String(headlineRaw || "").trim() || (consoleName ? `${consoleName} launches in the UK` : ""),
+          description: String(descriptionRaw || "").trim(),
+          imageUrl: String(imageRaw || "").trim(),
+          month,
+          year
+        };
+      })
+      .filter((entry) => entry.console && entry.headline && entry.month && entry.year);
+  }
+
   function filterEntriesByMonthYear(entries, month, year) {
     return entries.filter((entry) => entry.month === month && entry.year === year);
   }
@@ -395,14 +425,15 @@
   }
 
   async function loadAllData() {
-    const [gamesResult, cinemaResult, musicResult, wweResult, rentalResult, cartoonsResult, retroWeekendResult] = await Promise.all([
+    const [gamesResult, cinemaResult, musicResult, wweResult, rentalResult, cartoonsResult, retroWeekendResult, consoleResult] = await Promise.all([
       loadOptionalSheet("Games", () => fetchJsonArray(SHEET_URLS.games)),
       loadOptionalSheet("Cinema", () => fetchJsonArray(SHEET_URLS.cinema)),
       loadOptionalSheet("Music", () => fetchJsonArray(SHEET_URLS.music)),
       loadOptionalSheet("WWE", () => fetchJsonArray(SHEET_URLS.wwe)),
       loadOptionalSheet("Rental", () => fetchJsonArray(SHEET_URLS.rental)),
       loadOptionalSheet("Cartoons", () => fetchJsonArray(SHEET_URLS.cartoons)),
-      loadOptionalSheet("Retro weekend", () => fetchGoogleVisualizationRows(GOOGLE_SHEET_ID, RETRO_WEEKEND_GID))
+      loadOptionalSheet("Retro weekend", () => fetchGoogleVisualizationRows(GOOGLE_SHEET_ID, RETRO_WEEKEND_GID)),
+      loadOptionalSheet("Console", () => fetchJsonArray(SHEET_URLS.console))
     ]);
 
     if (!gamesResult.loaded) {
@@ -416,6 +447,7 @@
     const rental = parseRental(rentalResult.rows);
     const cartoons = parseCartoons(cartoonsResult.rows);
     const retroWeekend = parseRetroWeekend(retroWeekendResult.rows);
+    const consoleLaunches = parseConsoleLaunches(consoleResult.rows);
 
     return {
       games,
@@ -425,12 +457,14 @@
       rental,
       cartoons,
       retroWeekend,
+      consoleLaunches,
       cinemaLoaded: cinemaResult.loaded,
       musicLoaded: musicResult.loaded,
       wweLoaded: wweResult.loaded,
       rentalLoaded: rentalResult.loaded,
       cartoonsLoaded: cartoonsResult.loaded,
       retroWeekendLoaded: retroWeekendResult.loaded,
+      consoleLoaded: consoleResult.loaded,
       counts: {
         games: games.length,
         cinema: cinema.length,
@@ -438,7 +472,8 @@
         wwe: wwe.length,
         rental: rental.length,
         cartoons: cartoons.length,
-        retroWeekend: retroWeekend.length
+        retroWeekend: retroWeekend.length,
+        consoleLaunches: consoleLaunches.length
       }
     };
   }

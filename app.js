@@ -16,6 +16,7 @@
     let rental = [];
     let cartoons = [];
     let retroWeekend = [];
+    let consoleLaunches = [];
     let lastRandomGameKey = "";
     let randomSpinTimer = null;
     let isRandomSpinning = false;
@@ -149,6 +150,388 @@
       document.body.classList.remove("has-share-modal");
     }
 
+    function setImagePendingPlaceholder(element, label = "Archive") {
+      element.innerHTML = "";
+      element.classList.add("image-pending");
+
+      const labelEl = document.createElement("span");
+      labelEl.className = "image-pending-label";
+      labelEl.textContent = label;
+
+      const textEl = document.createElement("span");
+      textEl.className = "image-pending-text";
+      textEl.textContent = "Image pending";
+
+      element.appendChild(labelEl);
+      element.appendChild(textEl);
+    }
+
+    function normalizeConsoleText(value) {
+      const normalized = String(value || "")
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ");
+
+      const aliases = {
+        "nintendo entertainment system": "nes",
+        "nintendo nes": "nes",
+        "nes": "nes",
+        "sega master system": "master system",
+        "master system": "master system",
+        "sega mega drive": "mega drive",
+        "mega drive": "mega drive",
+        "sega genesis": "mega drive",
+        "nintendo game boy": "game boy",
+        "game boy": "game boy",
+        "super nintendo": "snes",
+        "super nintendo entertainment system": "snes",
+        "nintendo snes": "snes",
+        "snes": "snes",
+        "sega mega cd": "mega cd",
+        "mega cd": "mega cd",
+        "sega mega drive 32x": "32x",
+        "mega drive 32x": "32x",
+        "sega 32x": "32x",
+        "32x": "32x",
+        "sega saturn": "saturn",
+        "saturn": "saturn",
+        "sony playstation": "playstation",
+        "playstation": "playstation",
+        "ps1": "playstation",
+        "nintendo 64 uk": "n64",
+        "nintendo 64": "n64",
+        "n64": "n64",
+        "sega dreamcast": "dreamcast",
+        "dreamcast": "dreamcast",
+        "sony playstation 2": "ps2",
+        "playstation 2": "ps2",
+        "ps2": "ps2",
+        "microsoft xbox": "xbox",
+        "xbox launch": "xbox",
+        "xbox": "xbox",
+        "nintendo gamecube": "gamecube",
+        "gamecube": "gamecube",
+        "nintendo game cube": "gamecube",
+        "game cube": "gamecube",
+        "game boy advance": "gba",
+        "gba": "gba",
+        "playstation portable": "psp",
+        "sony playstation portable": "psp",
+        "sony psp": "psp",
+        "psp": "psp",
+        "nintendo ds": "nintendo ds",
+        "ds": "nintendo ds",
+        "xbox 360": "xbox 360",
+        "microsoft xbox 360": "xbox 360",
+        "nintendo wii": "wii",
+        "wii": "wii",
+        "sony playstation 3": "ps3",
+        "playstation 3": "ps3",
+        "ps3": "ps3"
+      };
+
+      return aliases[normalized] || normalized;
+    }
+
+    function getConsoleLaunchKey(launch) {
+      return [launch.console, launch.month, launch.year].map(value => String(value || "")).join("|");
+    }
+
+    function getConsoleLaunchImageUrl(launch) {
+      if (launch.imageUrl) return launch.imageUrl;
+
+      const assetMap = {
+        nes: "NES.png",
+        "master system": "Master System.png",
+        "mega drive": "Mega Drive.png",
+        "game boy": "Game Boy.png",
+        snes: "Super Nintendo.png",
+        "mega cd": "Mega CD.png",
+        "32x": "Mega Drive 32x.png",
+        saturn: "Sega Saturn.png",
+        playstation: "PS1.png",
+        n64: "N64.png",
+        dreamcast: "Dreamcast.png",
+        ps2: "PS2.png",
+        xbox: "Xbox.png",
+        gamecube: "GameCube.png",
+        gba: "GBA.png",
+        psp: "PSP.png",
+        "nintendo ds": "Nintendo DS.png",
+        "xbox 360": "Xbox 360.png",
+        wii: "Wii.png",
+        ps3: "PS3.png"
+      };
+
+      const fileName = assetMap[normalizeConsoleText(launch.console)];
+      return fileName ? `console/${encodeURIComponent(fileName)}` : "";
+    }
+
+    function getConsoleLaunchesForMonth(month, year) {
+      return consoleLaunches
+        .filter((launch) => launch.month === month && launch.year === year)
+        .sort((a, b) => (a.console || "").localeCompare(b.console || ""));
+    }
+
+    function getNextMonthYear(month, year) {
+      if (month === 12) {
+        return { month: 1, year: year + 1 };
+      }
+
+      return { month: month + 1, year };
+    }
+
+    function isInConsoleLaunchWindow(game, launch) {
+      const next = getNextMonthYear(launch.month, launch.year);
+      return (
+        (game.month === launch.month && game.year === launch.year) ||
+        (game.month === next.month && game.year === next.year)
+      );
+    }
+
+    function getLaunchWindowLabel(launch) {
+      const next = getNextMonthYear(launch.month, launch.year);
+      return `${monthNameFromNumber(launch.month)} ${launch.year} - ${monthNameFromNumber(next.month)} ${next.year}`;
+    }
+
+    function getLaunchWindowGames(launch) {
+      const launchConsole = normalizeConsoleText(launch.console);
+      return games
+        .filter((game) =>
+          isInConsoleLaunchWindow(game, launch) &&
+          normalizeConsoleText(game.console) === launchConsole
+        )
+        .sort((a, b) =>
+          a.year - b.year ||
+          a.month - b.month ||
+          (a.title || "").localeCompare(b.title || "")
+        );
+    }
+
+    function getRestOfLaunchWindowGames(launch) {
+      const launchConsole = normalizeConsoleText(launch.console);
+      return games
+        .filter((game) =>
+          isInConsoleLaunchWindow(game, launch) &&
+          normalizeConsoleText(game.console) !== launchConsole
+        )
+        .sort((a, b) =>
+          a.year - b.year ||
+          a.month - b.month ||
+          (a.title || "").localeCompare(b.title || "")
+        );
+    }
+
+    function getCultureCategoryDefinitions(month, year) {
+      const keyCinema = filterEntriesByMonthYear(cinema, month, year);
+      const keyMusic = filterEntriesByMonthYear(music, month, year);
+      const keyWwe = filterEntriesByMonthYear(wwe, month, year);
+      const keyRental = filterEntriesByMonthYear(rental, month, year);
+      const keyCartoons = filterEntriesByMonthYear(cartoons, month, year);
+
+      return [
+        {
+          key: "cinema",
+          label: "Cinema",
+          title: keyCinema.length ? `In cinemas (${keyCinema.length})` : "In cinemas",
+          emptyText: "No cinema data for this month.",
+          items: keyCinema,
+          linkMode: "imdb",
+          enableToggle: true
+        },
+        {
+          key: "rental",
+          label: "Rental",
+          title: keyRental.length ? `Available to rent (${keyRental.length})` : "Available to rent",
+          emptyText: "No rental data for this month.",
+          items: keyRental,
+          linkMode: "imdb",
+          enableToggle: true
+        },
+        {
+          key: "music",
+          label: "Music",
+          title: keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
+          emptyText: "No music data for this month.",
+          items: keyMusic,
+          linkMode: "youtube",
+          enableToggle: false
+        },
+        {
+          key: "cartoons",
+          label: "Kids TV",
+          title: keyCartoons.length ? `KIDS TV (${keyCartoons.length})` : "KIDS TV",
+          emptyText: "No kids TV data for this month.",
+          items: keyCartoons,
+          linkMode: undefined,
+          enableToggle: true
+        },
+        {
+          key: "wwe",
+          label: "Wrestling",
+          title: keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
+          emptyText: "No wrestling events for this month.",
+          items: keyWwe,
+          linkMode: undefined,
+          enableToggle: false
+        }
+      ];
+    }
+
+    function createCultureSection(category, savedSelections = null, onPick = null) {
+      const block = document.createElement("div");
+      block.className = "section-block";
+
+      const t = document.createElement("div");
+      t.className = "section-title";
+      t.textContent = category.title;
+      block.appendChild(t);
+
+      if (!category.items.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = category.emptyText;
+        block.appendChild(empty);
+        return block;
+      }
+
+      const ul = document.createElement("ul");
+      ul.className = "section-list";
+      block.appendChild(ul);
+
+      const more = document.createElement("div");
+      more.className = "section-more";
+      more.style.display = "none";
+      block.appendChild(more);
+
+      let expanded = false;
+      const enablePick = Boolean(savedSelections && onPick);
+
+      function renderList() {
+        ul.innerHTML = "";
+
+        const visible = (category.enableToggle && expanded)
+          ? category.items
+          : category.items.slice(0, MAX_SECTION_ITEMS);
+
+        visible.forEach(i => {
+          const li = document.createElement("li");
+          li.className = "section-entry";
+          const mainContent = document.createElement("div");
+          mainContent.className = "section-entry-main";
+          const destination = getSectionItemDestination(i, category.linkMode);
+
+          if (destination) {
+            const link = document.createElement("a");
+            link.href = destination;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = i.title;
+            link.className = "has-link";
+            mainContent.appendChild(link);
+          } else {
+            mainContent.textContent = i.title;
+          }
+
+          if (enablePick) {
+            const isSelected = Boolean(savedSelections[category.key] && savedSelections[category.key].title === i.title);
+            const pickButton = document.createElement("button");
+            pickButton.type = "button";
+            pickButton.className = isSelected ? "pick-button is-selected" : "pick-button";
+            pickButton.textContent = isSelected ? "Picked" : "Pick";
+            pickButton.dataset.categoryKey = category.key;
+            pickButton.dataset.itemTitle = i.title;
+            pickButton.addEventListener("click", (event) => {
+              onPick(category, i, event.currentTarget);
+            });
+            li.appendChild(pickButton);
+          }
+
+          li.appendChild(mainContent);
+          ul.appendChild(li);
+        });
+
+        if (!category.enableToggle || category.items.length <= MAX_SECTION_ITEMS) {
+          more.style.display = "none";
+        } else {
+          more.style.display = "block";
+          more.textContent = expanded ? "Show less" : `Show all ${category.items.length}`;
+        }
+      }
+
+      more.addEventListener("click", () => {
+        expanded = !expanded;
+        renderList();
+      });
+
+      renderList();
+      return block;
+    }
+
+    function appendCultureSections(card, categories, savedSelections = null, onPick = null) {
+      categories.forEach((category) => {
+        card.appendChild(createCultureSection(category, savedSelections, onPick));
+      });
+    }
+
+    function createCultureCardForMonth(month, year, titleText, subtitleText) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+
+      const main = document.createElement("div");
+      main.className = "card-header-main";
+
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = titleText;
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "card-subtitle";
+      subtitle.textContent = subtitleText;
+
+      main.appendChild(title);
+      main.appendChild(subtitle);
+      header.appendChild(main);
+      card.appendChild(header);
+
+      appendCultureSections(card, getCultureCategoryDefinitions(month, year));
+      return card;
+    }
+
+    function findConsoleLaunchMatches(query) {
+      const normalizedQuery = normalizeGameSearchText(query);
+      if (!normalizedQuery) return [];
+
+      return consoleLaunches.filter((launch) => {
+        const searchText = normalizeGameSearchText([
+          launch.console,
+          launch.headline,
+          monthNameFromNumber(launch.month),
+          launch.year,
+          "console launch"
+        ].join(" "));
+        return searchText.includes(normalizedQuery);
+      });
+    }
+
+    function findPrimaryConsoleLaunchMatch(query) {
+      const normalizedQuery = normalizeGameSearchText(query);
+      const normalizedConsoleQuery = normalizeConsoleText(query);
+      if (!normalizedQuery && !normalizedConsoleQuery) return null;
+
+      return consoleLaunches.find((launch) =>
+        normalizeConsoleText(launch.console) === normalizedConsoleQuery ||
+        normalizeGameSearchText(launch.console) === normalizedQuery ||
+        normalizeGameSearchText(launch.headline) === normalizedQuery
+      ) || null;
+    }
+
     function showConsoleChooser(matches, baseQuery) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
@@ -196,9 +579,21 @@
 
     function handleGameSelection(query, { populateInput = false } = {}) {
       const statusEl = document.getElementById("status");
+      const primaryLaunchMatch = findPrimaryConsoleLaunchMatch(query);
+      if (primaryLaunchMatch) {
+        renderConsoleLaunchResult(primaryLaunchMatch);
+        return;
+      }
+
       const matches = findGameMatches(games, query);
 
       if (!matches.length) {
+        const launchMatches = findConsoleLaunchMatches(query);
+        if (launchMatches.length) {
+          renderConsoleLaunchResult(launchMatches[0]);
+          return;
+        }
+
         statusEl.textContent = `No games found for "${query}".`;
         renderResults([], query);
         return;
@@ -385,6 +780,219 @@
       }
     }
 
+    function createConsoleLaunchPromo(launch) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "console-launch-promo";
+      button.addEventListener("click", () => renderConsoleLaunchResult(launch));
+
+      const imageWrap = document.createElement("div");
+      imageWrap.className = "console-launch-promo-art";
+      const imageUrl = getConsoleLaunchImageUrl(launch);
+      if (imageUrl) {
+        const img = document.createElement("img");
+        img.src = imageUrl;
+        img.alt = launch.headline;
+        img.loading = "lazy";
+        img.addEventListener("error", () => {
+          img.remove();
+          setImagePendingPlaceholder(imageWrap, "Console launch");
+        }, { once: true });
+        imageWrap.appendChild(img);
+      } else {
+        setImagePendingPlaceholder(imageWrap, "Console launch");
+      }
+
+      const copy = document.createElement("div");
+      copy.className = "console-launch-promo-copy";
+
+      const kicker = document.createElement("div");
+      kicker.className = "console-launch-kicker";
+      kicker.textContent = "Console launch";
+
+      const title = document.createElement("div");
+      title.className = "console-launch-promo-title";
+      title.textContent = launch.headline;
+
+      const meta = document.createElement("div");
+      meta.className = "console-launch-meta";
+      meta.textContent = `${monthNameFromNumber(launch.month)} ${launch.year} / ${launch.console}`;
+
+      copy.appendChild(kicker);
+      copy.appendChild(title);
+      copy.appendChild(meta);
+      button.appendChild(imageWrap);
+      button.appendChild(copy);
+
+      return button;
+    }
+
+    function createLaunchGameCard(game) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "console-launch-game-card";
+      button.addEventListener("click", () => showSpecificGame(game, { populateInput: true }));
+
+      const cover = document.createElement("div");
+      cover.className = "console-launch-game-thumb";
+      setImagePendingPlaceholder(cover, game.console || "Game");
+
+      getCoverUrlForGame(game).then((url) => {
+        if (!url) return;
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = `${game.title} cover`;
+        img.loading = "lazy";
+        img.referrerPolicy = "no-referrer";
+        img.addEventListener("error", () => {
+          img.remove();
+          setImagePendingPlaceholder(cover, game.console || "Game");
+        }, { once: true });
+        cover.appendChild(img);
+      });
+
+      const name = document.createElement("div");
+      name.className = "retro-weekend-name";
+      name.textContent = game.title;
+
+      button.appendChild(cover);
+      button.appendChild(name);
+      return button;
+    }
+
+    function renderConsoleLaunchResult(launch) {
+      const statusEl = document.getElementById("status");
+      const resultsEl = document.getElementById("results");
+      const launchGames = getLaunchWindowGames(launch);
+      const restOfMonth = getRestOfLaunchWindowGames(launch);
+      const imageUrl = getConsoleLaunchImageUrl(launch);
+      const launchWindowLabel = getLaunchWindowLabel(launch);
+
+      clearShareableUrl();
+      clearSuggestions();
+      clearShareModals();
+      setLandingChromeVisible(false);
+      syncSearchInputs(launch.console);
+      statusEl.textContent = `Showing ${launch.console} launch window - ${launchWindowLabel}.`;
+      resultsEl.innerHTML = "";
+
+      const hero = document.createElement("div");
+      hero.className = "console-launch-result";
+
+      const art = document.createElement("div");
+      art.className = "console-launch-result-art";
+      if (imageUrl) {
+        const img = document.createElement("img");
+        img.src = imageUrl;
+        img.alt = launch.headline;
+        img.addEventListener("error", () => {
+          img.remove();
+          setImagePendingPlaceholder(art, "Console launch");
+        }, { once: true });
+        art.appendChild(img);
+      } else {
+        setImagePendingPlaceholder(art, "Console launch");
+      }
+
+      const copy = document.createElement("div");
+      copy.className = "console-launch-result-copy";
+
+      const kicker = document.createElement("div");
+      kicker.className = "console-launch-kicker";
+      kicker.textContent = "Console launch";
+
+      const title = document.createElement("h1");
+      title.textContent = launch.headline;
+
+      const meta = document.createElement("div");
+      meta.className = "console-launch-meta";
+      meta.textContent = `${monthNameFromNumber(launch.month)} ${launch.year} / ${launch.console}`;
+
+      const description = document.createElement("p");
+      description.textContent = launch.description || `Explore the ${launch.console} launch window and the games sharing that UK release moment.`;
+
+      copy.appendChild(kicker);
+      copy.appendChild(title);
+      copy.appendChild(meta);
+      copy.appendChild(description);
+      hero.appendChild(art);
+      hero.appendChild(copy);
+      resultsEl.appendChild(hero);
+
+      const launchCard = document.createElement("div");
+      launchCard.className = "card console-launch-games-card";
+      const launchTitle = document.createElement("div");
+      launchTitle.className = "card-title";
+      launchTitle.textContent = `${launch.console} launch window games`;
+      const launchSubtitle = document.createElement("div");
+      launchSubtitle.className = "card-subtitle";
+      launchSubtitle.textContent = launchGames.length
+        ? `${launchGames.length} game${launchGames.length === 1 ? "" : "s"} released across ${launchWindowLabel}.`
+        : `Launch-window game data is still being added for ${launch.console}.`;
+
+      launchCard.appendChild(launchTitle);
+      launchCard.appendChild(launchSubtitle);
+
+      if (launchGames.length) {
+        const gameGrid = document.createElement("div");
+        gameGrid.className = "console-launch-game-grid";
+        launchGames.forEach((game) => gameGrid.appendChild(createLaunchGameCard(game)));
+        launchCard.appendChild(gameGrid);
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "empty console-launch-empty";
+        empty.textContent = `We have the ${launch.console} UK launch in the archive, but the matching ${launchWindowLabel} game rows are not complete yet. Once those releases are added to the Games sheet, they will appear here automatically.`;
+        launchCard.appendChild(empty);
+      }
+
+      resultsEl.appendChild(launchCard);
+
+      const restCard = document.createElement("div");
+      restCard.className = "card";
+      const restTitle = document.createElement("div");
+      restTitle.className = "card-title";
+      restTitle.textContent = "The rest of this month's releases";
+      const restSubtitle = document.createElement("div");
+      restSubtitle.className = "card-subtitle";
+      restSubtitle.textContent = `${monthNameFromNumber(launch.month)} ${launch.year}`;
+
+      restCard.appendChild(restTitle);
+      restCard.appendChild(restSubtitle);
+
+      if (restOfMonth.length) {
+        const list = document.createElement("ul");
+        list.className = "month-games-list";
+        restOfMonth.forEach((game) => {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = "#";
+          link.className = "clickable-game";
+          link.textContent = game.console ? `${game.title} - ${game.console}` : game.title;
+          link.addEventListener("click", (event) => {
+            event.preventDefault();
+            showSpecificGame(game, { populateInput: true });
+          });
+          li.appendChild(link);
+          list.appendChild(li);
+        });
+        restCard.appendChild(list);
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "empty console-launch-empty";
+        empty.textContent = `No other game releases are listed for ${monthNameFromNumber(launch.month)} ${launch.year} yet.`;
+        restCard.appendChild(empty);
+      }
+
+      resultsEl.appendChild(restCard);
+
+      resultsEl.appendChild(createCultureCardForMonth(
+        launch.month,
+        launch.year,
+        "More from this launch month",
+        `${monthNameFromNumber(launch.month)} ${launch.year} culture picks from cinema, rental, music, kids TV, and wrestling.`
+      ));
+    }
+
     function setRandomButtonSpinning(isSpinning) {
       const randomButton = document.getElementById("random-game");
       if (!randomButton) return;
@@ -401,6 +1009,11 @@
 
       const source = availableGames.length ? availableGames : games;
       return source[Math.floor(Math.random() * source.length)];
+    }
+
+    function pickRandomFromList(items) {
+      if (!items.length) return null;
+      return items[Math.floor(Math.random() * items.length)];
     }
 
     function showRandomGame() {
@@ -464,48 +1077,99 @@
       const monthName = monthNameFromNumber(currentMonth);
 
       const header = document.createElement("div");
-      header.className = "card month-card";
+      header.className = "month-issue";
+
+      const kicker = document.createElement("div");
+      kicker.className = "month-issue-kicker";
+      kicker.textContent = "This month in retro gaming";
 
       const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = `This month: ${monthName}`;
+      title.className = "month-issue-title";
+      title.textContent = `${monthName} rewind`;
 
       const subtitle = document.createElement("div");
-      subtitle.className = "card-subtitle";
-      subtitle.textContent = "Games released in this month across the years.";
+      subtitle.className = "month-issue-copy";
+      subtitle.textContent = `Browse ${monthName} releases for the same month 20, 25, even 40 years ago. Pick a headline game, then build the weekend around it.`;
 
+      header.appendChild(kicker);
       header.appendChild(title);
       header.appendChild(subtitle);
       resultsEl.appendChild(header);
 
       let anyGroups = false;
+      const grid = document.createElement("div");
+      grid.className = "month-feature-grid";
 
       OFFSETS_YEARS.forEach(offset => {
         const targetYear = currentYear - offset;
-        const group = games.filter(g => g.month === currentMonth && g.year === targetYear);
+        const group = games
+          .filter(g => g.month === currentMonth && g.year === targetYear)
+          .sort((a, b) =>
+            (a.title || "").trim().localeCompare((b.title || "").trim(), undefined, { sensitivity: "base" })
+          );
         if (!group.length) return;
 
         anyGroups = true;
+        const featuredGame = pickRandomFromList(group) || group[0];
 
         const card = document.createElement("div");
-        card.className = "card month-card";
+        card.className = "month-feature-card";
 
         const cardHeader = document.createElement("div");
-        cardHeader.className = "card-header";
+        cardHeader.className = "month-feature-header";
 
         const left = document.createElement("div");
         const yearTitle = document.createElement("div");
-        yearTitle.className = "card-title";
-        yearTitle.textContent = `${offset} years ago - ${monthName} ${targetYear}`;
+        yearTitle.className = "month-feature-title";
+        yearTitle.textContent = `${monthName} ${targetYear}`;
 
         const yearSubtitle = document.createElement("div");
-        yearSubtitle.className = "card-subtitle";
-        yearSubtitle.textContent = `${group.length} game` + (group.length === 1 ? "" : "s");
+        yearSubtitle.className = "month-feature-subtitle";
+        yearSubtitle.textContent = `${offset} years ago / ${group.length} game` + (group.length === 1 ? "" : "s");
 
         left.appendChild(yearTitle);
         left.appendChild(yearSubtitle);
         cardHeader.appendChild(left);
         card.appendChild(cardHeader);
+
+        const featureButton = document.createElement("button");
+        featureButton.type = "button";
+        featureButton.className = "month-feature-cover";
+        featureButton.setAttribute("aria-label", `Open ${featuredGame.title}`);
+        featureButton.addEventListener("click", () => {
+          showSpecificGame(featuredGame, { populateInput: true });
+        });
+
+        const coverPlaceholder = document.createElement("div");
+        coverPlaceholder.className = "month-feature-cover-placeholder";
+        setImagePendingPlaceholder(coverPlaceholder, featuredGame.console || "Game");
+        featureButton.appendChild(coverPlaceholder);
+
+        getCoverUrlForGame(featuredGame).then((coverUrl) => {
+          if (!coverUrl) return;
+
+          const image = document.createElement("img");
+          image.src = coverUrl;
+          image.alt = `${featuredGame.title} cover`;
+          image.loading = "lazy";
+          image.referrerPolicy = "no-referrer";
+          image.addEventListener("error", () => {
+            image.remove();
+            setImagePendingPlaceholder(coverPlaceholder, featuredGame.console || "Game");
+          });
+          featureButton.appendChild(image);
+        });
+
+        const featureTitle = document.createElement("button");
+        featureTitle.type = "button";
+        featureTitle.className = "month-feature-headline";
+        featureTitle.textContent = featuredGame.console ? `${featuredGame.title} - ${featuredGame.console}` : featuredGame.title;
+        featureTitle.addEventListener("click", () => {
+          showSpecificGame(featuredGame, { populateInput: true });
+        });
+
+        card.appendChild(featureButton);
+        card.appendChild(featureTitle);
 
         const list = document.createElement("ul");
         list.className = "month-games-list";
@@ -526,23 +1190,32 @@
           list.appendChild(li);
         }
 
-        group.slice(0, MAX_MONTH_GAMES).forEach(addGameRow);
+        group
+          .filter((game) => getGameKey(game) !== getGameKey(featuredGame))
+          .slice(0, 6)
+          .forEach(addGameRow);
         card.appendChild(list);
 
-        if (group.length > MAX_MONTH_GAMES) {
+        if (group.length > 7) {
           const more = document.createElement("div");
           more.className = "section-more";
           more.textContent = `Show all ${group.length} games`;
           more.addEventListener("click", () => {
             list.innerHTML = "";
-            group.forEach(addGameRow);
+            group
+              .filter((game) => getGameKey(game) !== getGameKey(featuredGame))
+              .forEach(addGameRow);
             more.remove();
           });
           card.appendChild(more);
         }
 
-        resultsEl.appendChild(card);
+        grid.appendChild(card);
       });
+
+      if (anyGroups) {
+        resultsEl.appendChild(grid);
+      }
 
       if (!anyGroups) {
         const msg = document.createElement("div");
@@ -644,8 +1317,9 @@
         const group = games
           .filter(g => g.month === month && g.year === year)
           .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+        const launchMatches = getConsoleLaunchesForMonth(month, year);
 
-        if (!group.length) {
+        if (!group.length && !launchMatches.length) {
           const empty = document.createElement("div");
           empty.className = "empty";
           empty.textContent = `No games found for ${monthNameFromNumber(month)} ${year}.`;
@@ -655,6 +1329,9 @@
         }
 
         listWrap.innerHTML = "";
+        launchMatches.forEach((launch) => {
+          listWrap.appendChild(createConsoleLaunchPromo(launch));
+        });
         listWrap.appendChild(list);
         group.forEach(addGameRow);
       }
@@ -786,6 +1463,7 @@
         rental = data.rental;
         cartoons = data.cartoons;
         retroWeekend = data.retroWeekend;
+        consoleLaunches = data.consoleLaunches;
         uniqueGameTitles = getUniqueGameTitles(games);
         isLoaded = true;
 
@@ -795,14 +1473,16 @@
           data.wweLoaded ? null : "wrestling",
           data.rentalLoaded ? null : "rental",
           data.cartoonsLoaded ? null : "kids TV",
-          data.retroWeekendLoaded ? null : "retro weekend"
+          data.retroWeekendLoaded ? null : "retro weekend",
+          data.consoleLoaded ? null : "console launches"
         ].filter(Boolean);
 
         statusEl.textContent =
           `Loaded ${data.counts.games} games, ${data.counts.cinema} films, ` +
           `${data.counts.music} tracks, ${data.counts.wwe} wrestling events` +
           (data.rentalLoaded ? `, ${data.counts.rental} rental titles` : ", rental not loaded") +
-          (data.cartoonsLoaded ? `, ${data.counts.cartoons} kids TV entries.` : ", kids TV not loaded.") +
+          (data.cartoonsLoaded ? `, ${data.counts.cartoons} kids TV entries` : ", kids TV not loaded") +
+          (data.consoleLoaded ? `, ${data.counts.consoleLaunches} console launches.` : ", console launches not loaded.") +
           (unavailableSections.length ? ` Some sections could not load: ${unavailableSections.join(", ")}.` : "");
 
         const sharedState = readSharedUrlState();
@@ -939,9 +1619,21 @@
       }
 
       clearShareableUrl();
+      const primaryLaunchMatch = findPrimaryConsoleLaunchMatch(query);
+      if (primaryLaunchMatch) {
+        renderConsoleLaunchResult(primaryLaunchMatch);
+        return;
+      }
+
       const matches = findGameMatches(games, query);
 
       if (!matches.length) {
+        const launchMatches = findConsoleLaunchMatches(query);
+        if (launchMatches.length) {
+          renderConsoleLaunchResult(launchMatches[0]);
+          return;
+        }
+
         statusEl.textContent = `No games found for "${query}".`;
         renderResults([], query);
         return;
@@ -1210,14 +1902,13 @@
         image.loading = "lazy";
         image.referrerPolicy = "no-referrer";
         image.addEventListener("error", () => {
-          thumb.innerHTML = "";
           thumb.classList.add("retro-weekend-thumb--placeholder");
-          thumb.textContent = item.label;
+          setImagePendingPlaceholder(thumb, item.label);
         }, { once: true });
         thumb.appendChild(image);
       } else {
         thumb.classList.add("retro-weekend-thumb--placeholder");
-        thumb.textContent = item.label;
+        setImagePendingPlaceholder(thumb, item.label);
       }
 
       const label = document.createElement("div");
@@ -1323,12 +2014,12 @@
           image.addEventListener("error", () => {
             image.remove();
             imageWrap.classList.add("is-placeholder");
-            imageWrap.textContent = item.label;
+            setImagePendingPlaceholder(imageWrap, item.label);
           }, { once: true });
           imageWrap.appendChild(image);
         } else {
           imageWrap.classList.add("is-placeholder");
-          imageWrap.textContent = item.label;
+          setImagePendingPlaceholder(imageWrap, item.label);
         }
 
         const label = document.createElement("div");
@@ -1650,30 +2341,40 @@
         const x = contentX + (column * (cardWidth + gap));
         const y = cursorY + (row * (itemHeight + gap));
         const image = itemImages[index];
+        const strokeWidth = template.key === "game-box" ? 0 : 2;
+        const imageInset = strokeWidth || 2;
+        const imageX = x + imageInset;
+        const imageY = y + imageInset;
+        const imageWidth = cardWidth - (imageInset * 2);
+        const insetImageHeight = imageHeight - imageInset;
 
         ctx.fillStyle = template.key === "web-y2k" || template.key === "game-box"
           ? "rgba(255, 255, 255, 0.72)"
           : "rgba(0, 0, 0, 0.48)";
         ctx.fillRect(x, y, cardWidth, itemHeight);
-        if (template.key !== "game-box") {
-          ctx.strokeStyle = template.muted;
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x, y, cardWidth, itemHeight);
-        }
 
         if (image) {
           try {
-            drawCanvasImageContain(ctx, image, x, y, cardWidth, imageHeight);
+            drawCanvasImageContain(ctx, image, imageX, imageY, imageWidth, insetImageHeight);
           } catch (err) {
             ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
-            ctx.fillRect(x, y, cardWidth, imageHeight);
+            ctx.fillRect(imageX, imageY, imageWidth, insetImageHeight);
           }
         } else {
           ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
-          ctx.fillRect(x, y, cardWidth, imageHeight);
+          ctx.fillRect(imageX, imageY, imageWidth, insetImageHeight);
           ctx.fillStyle = template.accent;
           ctx.font = "700 22px 'Chakra Petch', sans-serif";
-          ctx.fillText(item.label.toUpperCase(), x + 16, y + 76);
+          ctx.fillText(item.label.toUpperCase(), x + 16, y + 68);
+          ctx.fillStyle = template.muted;
+          ctx.font = "700 18px 'Chakra Petch', sans-serif";
+          ctx.fillText("IMAGE PENDING", x + 16, y + 100);
+        }
+
+        if (template.key !== "game-box") {
+          ctx.strokeStyle = template.muted;
+          ctx.lineWidth = strokeWidth;
+          ctx.strokeRect(x, y, cardWidth, itemHeight);
         }
 
         ctx.fillStyle = template.accent;
@@ -2105,18 +2806,7 @@ getCoverUrlForGame(game).then((url) => {
 
         card.appendChild(header);
 
-        const keyCinema = filterEntriesByMonthYear(cinema, game.month, game.year);
-        const keyMusic = filterEntriesByMonthYear(music, game.month, game.year);
-        const keyWwe = filterEntriesByMonthYear(wwe, game.month, game.year);
-        const keyRental = filterEntriesByMonthYear(rental, game.month, game.year);
-        const keyCartoons = filterEntriesByMonthYear(cartoons, game.month, game.year);
-        const customCategoryDefinitions = [
-          { key: "cinema", label: "Cinema", items: keyCinema, linkMode: "imdb" },
-          { key: "rental", label: "Rental", items: keyRental, linkMode: "imdb" },
-          { key: "music", label: "Music", items: keyMusic, linkMode: "youtube" },
-          { key: "cartoons", label: "Kids TV", items: keyCartoons, linkMode: undefined },
-          { key: "wwe", label: "Wrestling", items: keyWwe, linkMode: undefined }
-        ];
+        const cultureCategories = getCultureCategoryDefinitions(game.month, game.year);
         const defaultSelections = getDefaultRetroWeekendSelections(game);
         const isSharedGame = sharedGameKey && getGameKey(game) === sharedGameKey;
         let savedSelections = isSharedGame ? { ...(options.initialSelections || {}) } : {};
@@ -2128,155 +2818,9 @@ getCoverUrlForGame(game).then((url) => {
         );
         resultsEl.appendChild(retroWeekendController.card);
 
-        function section(titleText, items, emptyText, linkMode, enableToggle = false, category = null) {
-          const block = document.createElement("div");
-          block.className = "section-block";
-
-          const t = document.createElement("div");
-          t.className = "section-title";
-          t.textContent = titleText;
-          block.appendChild(t);
-
-          if (!items.length) {
-            const empty = document.createElement("div");
-            empty.className = "empty";
-            empty.textContent = emptyText;
-            block.appendChild(empty);
-            return block;
-          }
-
-          const ul = document.createElement("ul");
-          ul.className = "section-list";
-          block.appendChild(ul);
-
-          const more = document.createElement("div");
-          more.className = "section-more";
-          more.style.display = "none";
-          block.appendChild(more);
-
-          let expanded = false;
-
-          function renderList() {
-            ul.innerHTML = "";
-
-            const visible = (enableToggle && expanded) ? items : items.slice(0, MAX_SECTION_ITEMS);
-
-            visible.forEach(i => {
-              const li = document.createElement("li");
-              li.className = "section-entry";
-              const mainContent = document.createElement("div");
-              mainContent.className = "section-entry-main";
-
-              if (linkMode === "imdb") {
-                const link = document.createElement("a");
-                link.href = `https://www.imdb.com/find?q=${encodeURIComponent(i.title)}`;
-                link.target = "_blank";
-                link.rel = "noopener noreferrer";
-                link.textContent = i.title;
-                link.className = "has-link";
-                mainContent.appendChild(link);
-              } else if (linkMode === "youtube") {
-                const link = document.createElement("a");
-                link.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(i.title)}`;
-                link.target = "_blank";
-                link.rel = "noopener noreferrer";
-                link.textContent = i.title;
-                link.className = "has-link";
-                mainContent.appendChild(link);
-              } else if (i.url) {
-                const a = document.createElement("a");
-                a.href = i.url;
-                a.target = "_blank";
-                a.rel = "noopener noreferrer";
-                a.textContent = i.title;
-                a.className = "has-link";
-                a.style.color = "#ffffff";
-                mainContent.appendChild(a);
-              } else {
-                mainContent.textContent = i.title;
-              }
-
-              if (category) {
-                const isSelected = Boolean(savedSelections[category.key] && savedSelections[category.key].title === i.title);
-                const pickButton = document.createElement("button");
-                pickButton.type = "button";
-                pickButton.className = isSelected ? "pick-button is-selected" : "pick-button";
-                pickButton.textContent = isSelected ? "Picked" : "Pick";
-                pickButton.dataset.categoryKey = category.key;
-                pickButton.dataset.itemTitle = i.title;
-                pickButton.addEventListener("click", (event) => {
-                  toggleCustomSelection(category, i, event.currentTarget);
-                });
-                li.appendChild(pickButton);
-              }
-
-              li.appendChild(mainContent);
-
-              ul.appendChild(li);
-            });
-
-            if (more) {
-              if (!enableToggle || items.length <= MAX_SECTION_ITEMS) {
-                more.style.display = "none";
-              } else {
-                more.style.display = "block";
-                more.textContent = expanded ? `Show less` : `Show all ${items.length}`;
-              }
-            }
-          }
-
-          more.addEventListener("click", () => {
-            expanded = !expanded;
-            renderList();
-          });
-
-          renderList();
-          return block;
-        }
-
         function renderSections() {
           card.replaceChildren(bg, header);
-
-          card.appendChild(section(
-            keyCinema.length ? `In cinemas (${keyCinema.length})` : "In cinemas",
-            keyCinema,
-            "No cinema data for this month.",
-            "imdb",
-            true,
-            customCategoryDefinitions[0]
-          ));
-          card.appendChild(section(
-            keyRental.length ? `Available to rent (${keyRental.length})` : "Available to rent",
-            keyRental,
-            "No rental data for this month.",
-            "imdb",
-            true,
-            customCategoryDefinitions[1]
-          ));
-          card.appendChild(section(
-            keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
-            keyMusic,
-            "No music data for this month.",
-            "youtube",
-            false,
-            customCategoryDefinitions[2]
-          ));
-          card.appendChild(section(
-            keyCartoons.length ? `KIDS TV (${keyCartoons.length})` : "KIDS TV",
-            keyCartoons,
-            "No kids TV data for this month.",
-            undefined,
-            true,
-            customCategoryDefinitions[3]
-          ));
-          card.appendChild(section(
-            keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
-            keyWwe,
-            "No wrestling events for this month.",
-            undefined,
-            false,
-            customCategoryDefinitions[4]
-          ));
+          appendCultureSections(card, cultureCategories, savedSelections, toggleCustomSelection);
         }
 
         function preserveScrollPosition(updateFn, anchorEl = null) {
