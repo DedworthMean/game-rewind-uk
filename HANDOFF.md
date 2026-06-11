@@ -167,6 +167,15 @@ Experimental local addition after the live push:
 - Each timeline year shows age, game links, console launches when present, and culture counts for cinema, rental, music, kids TV, and wrestling.
 - This is intentionally self-contained so it can be removed if the feature does not feel right.
 
+Local addition after Birthday List:
+
+- Music sheet rows now read a `Link` column.
+- If a music row has a YouTube link and no `Image`, the app derives a thumbnail from the YouTube video ID.
+- Music result links now prefer the direct `Link` URL over the generic YouTube search URL.
+- Tested with September 1986: `Communards - Don't Leave Me This Way` links to the sheet YouTube URL and uses `img.youtube.com` artwork in the Retro Weekend tile.
+- Best Of / Retro Weekend music now follows the same rule for `Music Link`: YouTube links become the click target and thumbnail source; non-YouTube links are still treated as artwork.
+- Tested with September 1986 Best Of music: `Run DMC / Aerosmith - Walk This Way` opens the direct YouTube URL and uses the YouTube thumbnail.
+
 Known data note:
 
 - Nintendo DS currently has `0` launch-window games because the Games sheet has not yet been updated with March/April 2005 DS games. The feature is ready; once those rows are added, they should appear automatically.

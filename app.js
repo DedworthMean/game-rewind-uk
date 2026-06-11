@@ -1960,6 +1960,8 @@
           label: "Music",
           title: entry.musicTitle,
           imageUrl: entry.musicImageUrl,
+          url: entry.musicUrl || "",
+          linkMode: "youtube",
           month: game.month,
           year: game.year
         } : null,
@@ -1997,9 +1999,21 @@
       return String(value || "").trim().toLowerCase();
     }
 
+    function findMusicEntry(month, year, title) {
+      const normalizedTitle = normalizeLookupText(title);
+      if (!normalizedTitle) return null;
+
+      return music.find((entry) =>
+        entry.month === month &&
+        entry.year === year &&
+        normalizeLookupText(entry.title) === normalizedTitle
+      ) || null;
+    }
+
     function getDefaultRetroWeekendSelections(game) {
       const entry = retroWeekend.find((item) => item.month === game.month && item.year === game.year);
       if (!entry) return {};
+      const musicEntry = findMusicEntry(game.month, game.year, entry.musicTitle);
 
       return {
         ...(entry.cinemaTitle ? {
@@ -2032,6 +2046,14 @@
             imageUrl: entry.wweImageUrl || "",
             url: "",
             linkMode: ""
+          }
+        } : {}),
+        ...(entry.musicTitle ? {
+          music: {
+            title: entry.musicTitle,
+            imageUrl: entry.musicImageUrl || musicEntry?.imageUrl || "",
+            url: entry.musicUrl || musicEntry?.url || "",
+            linkMode: "youtube"
           }
         } : {})
       };
@@ -2082,14 +2104,14 @@
 
     function getSectionItemDestination(item, linkMode) {
       if (!item || !item.title) return null;
+      if (item.url) {
+        return item.url;
+      }
       if (linkMode === "imdb") {
         return `https://www.imdb.com/find?q=${encodeURIComponent(item.title)}`;
       }
       if (linkMode === "youtube") {
         return `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}`;
-      }
-      if (item.url) {
-        return item.url;
       }
       return null;
     }

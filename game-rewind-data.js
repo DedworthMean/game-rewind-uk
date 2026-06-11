@@ -166,13 +166,51 @@
       .filter((entry) => entry.title && entry.month && entry.year);
   }
 
+  function getYouTubeVideoId(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+
+    try {
+      const url = new URL(raw);
+      const host = url.hostname.replace(/^www\./, "");
+      if (host === "youtu.be") {
+        return url.pathname.split("/").filter(Boolean)[0] || "";
+      }
+      if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
+        if (url.searchParams.get("v")) return url.searchParams.get("v");
+        const parts = url.pathname.split("/").filter(Boolean);
+        if (["embed", "shorts", "live"].includes(parts[0])) return parts[1] || "";
+      }
+    } catch (err) {
+      return "";
+    }
+
+    return "";
+  }
+
+  function getYouTubeThumbnailUrl(value) {
+    const videoId = getYouTubeVideoId(value);
+    return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+  }
+
+  function isYouTubeUrl(value) {
+    return Boolean(getYouTubeVideoId(value));
+  }
+
   function parseMusic(rows) {
+    const linkKeys = ["Link", "URL", "Url", "YouTube", "Youtube", "YouTube Link", "Video"];
+
     return rows
       .map((row) => {
         const { month, year } = parseMonthYear(row["Month"]);
+        const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const url = String(linkRaw || "").trim();
+        const imageUrl = String(row["Image"] || "").trim() || getYouTubeThumbnailUrl(url);
+
         return {
           title: (row["Title"] || "").trim(),
-          imageUrl: String(row["Image"] || "").trim(),
+          imageUrl,
+          url,
           month,
           year
         };
@@ -233,13 +271,19 @@
     return rows
       .map((row) => {
         const { month, year } = parseMonthYear(row["UK Date"]);
+        const musicLink = String(row["Music Link"] || "").trim();
+        const musicImageRaw = String(row["Music Image"] || row["Music Image Link"] || row["Music Artwork"] || "").trim();
+        const musicUrl = isYouTubeUrl(musicLink) ? musicLink : "";
+        const musicImageUrl = musicImageRaw || (musicUrl ? getYouTubeThumbnailUrl(musicUrl) : musicLink);
+
         return {
           month,
           year,
           cinemaTitle: String(row["Cinema"] || "").trim(),
           cinemaImageUrl: String(row["Cinema Link"] || "").trim(),
           musicTitle: String(row["Music"] || "").trim(),
-          musicImageUrl: String(row["Music Link"] || "").trim(),
+          musicImageUrl,
+          musicUrl,
           wweTitle: String(row["WWE"] || row["Wrestling"] || "").trim(),
           wweImageUrl: String(row["WWE Link"] || row["Wrestling Link"] || "").trim(),
           rentalTitle: String(row["Rental"] || "").trim(),
