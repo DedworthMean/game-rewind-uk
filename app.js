@@ -353,7 +353,7 @@
         },
         {
           key: "music",
-          label: "Music",
+          label: "Single",
           title: keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
           emptyText: "No music data for this month.",
           items: keyMusic,
@@ -1957,7 +1957,7 @@
           year: game.year
         } : null,
         music: entry && entry.musicTitle ? {
-          label: "Music",
+          label: "Single",
           title: entry.musicTitle,
           imageUrl: entry.musicImageUrl,
           url: entry.musicUrl || "",
@@ -1971,7 +1971,7 @@
       return [
         { key: "cinema", label: "Cinema" },
         { key: "rental", label: "Rental" },
-        { key: "music", label: "Music" },
+        { key: "music", label: "Single" },
         { key: "cartoons", label: "Kids TV" },
         { key: "wwe", label: "Wrestling" }
       ]
@@ -2726,7 +2726,7 @@
         { key: "game", label: "Game" },
         { key: "cinema", label: "Cinema" },
         { key: "rental", label: "Rental" },
-        { key: "music", label: "Music" },
+        { key: "music", label: "Single" },
         { key: "cartoons", label: "Kids TV" },
         { key: "wwe", label: "Wrestling" }
       ];
