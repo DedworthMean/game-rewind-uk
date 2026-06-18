@@ -2946,6 +2946,7 @@
       let shareCardDataUrl = "";
       let shareCardCanvas = null;
       let selectedTemplateKey = SHARE_CARD_TEMPLATES[0].key;
+      let sharePreviewRequestId = 0;
 
       card.appendChild(kicker);
       titleRow.appendChild(title);
@@ -2972,11 +2973,45 @@
         document.body.classList.remove("has-share-modal");
       }
 
+      async function renderShareCardPreview() {
+        const requestId = ++sharePreviewRequestId;
+
+        if (!isMobileShareDevice()) {
+          renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+          return;
+        }
+
+        sharePreview.innerHTML = "";
+        const loading = document.createElement("div");
+        loading.className = "share-card-preview-loading";
+        loading.textContent = "Preparing preview...";
+        sharePreview.appendChild(loading);
+
+        try {
+          if (!shareCardCanvas) {
+            const canvas = document.createElement("canvas");
+            shareCardCanvas = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+          }
+
+          if (requestId !== sharePreviewRequestId) return;
+
+          const image = document.createElement("img");
+          image.className = "share-card-rendered-preview";
+          image.alt = "Share card preview";
+          image.src = shareCardCanvas.toDataURL("image/jpeg", 0.9);
+          sharePreview.innerHTML = "";
+          sharePreview.appendChild(image);
+        } catch (err) {
+          if (requestId !== sharePreviewRequestId) return;
+          renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+        }
+      }
+
       function createShareCard() {
         createShareButton.disabled = true;
         createShareButton.textContent = "Opening...";
         try {
-          renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+          renderShareCardPreview();
           shareModal.classList.remove("is-hidden");
           document.body.classList.add("has-share-modal");
           shareModal.focus();
@@ -3096,7 +3131,7 @@
         selectedTemplateKey = templateSelect.value;
         shareCardDataUrl = "";
         shareCardCanvas = null;
-        renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+        renderShareCardPreview();
       });
       downloadShareButton.addEventListener("click", async () => {
         downloadShareButton.disabled = true;

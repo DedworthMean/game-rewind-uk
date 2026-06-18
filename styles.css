@@ -1220,6 +1220,23 @@ input[type="date"]:focus,
   background: rgba(0, 0, 0, 0.38);
 }
 
+.share-card-rendered-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.share-card-preview-loading {
+  display: grid;
+  min-height: 320px;
+  place-items: center;
+  padding: 1rem;
+  color: var(--yellow);
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .share-template-control {
   display: grid;
   gap: 0.35rem;
