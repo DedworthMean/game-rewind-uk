@@ -1054,6 +1054,7 @@ input[type="date"]:focus,
 }
 
 .retro-weekend-thumb {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1069,6 +1070,42 @@ input[type="date"]:focus,
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.retro-weekend-thumb--single {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.retro-weekend-thumb--single .single-art-bg,
+.html-share-card-image--single .single-art-bg {
+  position: absolute;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(14px) saturate(1.25);
+  opacity: 0.72;
+  transform: scale(1.02);
+}
+
+.retro-weekend-thumb--single::after,
+.html-share-card-image--single::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+}
+
+.retro-weekend-thumb--single .single-art-main,
+.html-share-card-image--single .single-art-main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  transform: scale(1.16);
 }
 
 .retro-weekend-thumb--placeholder {
@@ -1290,6 +1327,7 @@ input[type="date"]:focus,
 }
 
 .html-share-card-image {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1521,9 +1559,13 @@ input[type="date"]:focus,
 }
 
 .html-share-card--game-box .html-share-card-tile,
-.html-share-card--web-y2k .html-share-card-tile,
-.html-share-card--vhs-tape .html-share-card-tile {
+.html-share-card--web-y2k .html-share-card-tile {
   background: rgba(255, 255, 255, 0.6);
+}
+
+.html-share-card--vhs-tape .html-share-card-tile,
+.html-share-card--vhs-tape .html-share-card-image {
+  background: #050505;
 }
 
 .html-share-card .html-share-card-image {

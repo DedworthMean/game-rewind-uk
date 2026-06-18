@@ -575,6 +575,7 @@
 
       card.appendChild(list);
       resultsEl.appendChild(card);
+      scrollResultViewToTop();
     }
 
     function handleGameSelection(query, { populateInput = false } = {}) {
@@ -756,6 +757,14 @@
       url.search = "";
       url.hash = "";
       window.history.replaceState({}, "", url.toString());
+    }
+
+    function scrollResultViewToTop() {
+      window.requestAnimationFrame(() => {
+        const target = document.getElementById("status") || document.getElementById("results");
+        if (!target) return;
+        target.scrollIntoView({ block: "start", behavior: "auto" });
+      });
     }
 
     function triggerResultsReveal() {
@@ -991,6 +1000,7 @@
         "More from this launch month",
         `${monthNameFromNumber(launch.month)} ${launch.year} culture picks from cinema, rental, music, kids TV, and wrestling.`
       ));
+      scrollResultViewToTop();
     }
 
     function setRandomButtonSpinning(isSpinning) {
@@ -1344,6 +1354,7 @@
       card.appendChild(listWrap);
 
       resultsEl.appendChild(card);
+      scrollResultViewToTop();
     }
 
     function renderBrowseByConsole() {
@@ -1447,6 +1458,7 @@
       card.appendChild(listWrap);
 
       resultsEl.appendChild(card);
+      scrollResultViewToTop();
     }
 
     function getArchiveYearRange() {
@@ -1692,6 +1704,7 @@
       card.appendChild(form);
       card.appendChild(timelineWrap);
       resultsEl.appendChild(card);
+      scrollResultViewToTop();
       dateInput.focus();
     }
 
@@ -2151,6 +2164,41 @@
       return null;
     }
 
+    function isSingleItem(item) {
+      return item && item.label === "Single";
+    }
+
+    function appendSingleArtwork(imageWrap, imageUrl, altText, onError) {
+      const background = document.createElement("img");
+      background.src = imageUrl;
+      background.alt = "";
+      background.loading = "lazy";
+      background.referrerPolicy = "no-referrer";
+      background.className = "single-art-bg";
+
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = altText;
+      image.loading = "lazy";
+      image.referrerPolicy = "no-referrer";
+      image.className = "single-art-main";
+
+      let failed = false;
+      function handleError() {
+        if (failed) return;
+        failed = true;
+        background.remove();
+        image.remove();
+        onError();
+      }
+
+      background.addEventListener("error", handleError, { once: true });
+      image.addEventListener("error", handleError, { once: true });
+
+      imageWrap.appendChild(background);
+      imageWrap.appendChild(image);
+    }
+
     function createRetroWeekendTile(item, grid, card) {
       const destination = getRetroWeekendDestination(item);
       const tile = document.createElement(destination ? "a" : "div");
@@ -2162,18 +2210,30 @@
       }
 
       const thumb = document.createElement("div");
-      thumb.className = "retro-weekend-thumb";
+      thumb.className = isSingleItem(item) ? "retro-weekend-thumb retro-weekend-thumb--single" : "retro-weekend-thumb";
       if (item.imageUrl) {
-        const image = document.createElement("img");
-        image.src = item.imageUrl;
-        image.alt = item.title ? `${item.label}: ${item.title}` : `${item.label} image`;
-        image.loading = "lazy";
-        image.referrerPolicy = "no-referrer";
-        image.addEventListener("error", () => {
-          thumb.classList.add("retro-weekend-thumb--placeholder");
-          setImagePendingPlaceholder(thumb, item.label);
-        }, { once: true });
-        thumb.appendChild(image);
+        if (isSingleItem(item)) {
+          appendSingleArtwork(
+            thumb,
+            item.imageUrl,
+            item.title ? `${item.label}: ${item.title}` : `${item.label} image`,
+            () => {
+              thumb.classList.add("retro-weekend-thumb--placeholder");
+              setImagePendingPlaceholder(thumb, item.label);
+            }
+          );
+        } else {
+          const image = document.createElement("img");
+          image.src = item.imageUrl;
+          image.alt = item.title ? `${item.label}: ${item.title}` : `${item.label} image`;
+          image.loading = "lazy";
+          image.referrerPolicy = "no-referrer";
+          image.addEventListener("error", () => {
+            thumb.classList.add("retro-weekend-thumb--placeholder");
+            setImagePendingPlaceholder(thumb, item.label);
+          }, { once: true });
+          thumb.appendChild(image);
+        }
       } else {
         thumb.classList.add("retro-weekend-thumb--placeholder");
         setImagePendingPlaceholder(thumb, item.label);
@@ -2271,20 +2331,32 @@
         tile.className = "html-share-card-tile";
 
         const imageWrap = document.createElement("div");
-        imageWrap.className = "html-share-card-image";
+        imageWrap.className = isSingleItem(item) ? "html-share-card-image html-share-card-image--single" : "html-share-card-image";
 
         if (item.imageUrl) {
-          const image = document.createElement("img");
-          image.src = item.imageUrl;
-          image.alt = `${item.label}: ${item.title}`;
-          image.loading = "lazy";
-          image.referrerPolicy = "no-referrer";
-          image.addEventListener("error", () => {
-            image.remove();
-            imageWrap.classList.add("is-placeholder");
-            setImagePendingPlaceholder(imageWrap, item.label);
-          }, { once: true });
-          imageWrap.appendChild(image);
+          if (isSingleItem(item)) {
+            appendSingleArtwork(
+              imageWrap,
+              item.imageUrl,
+              `${item.label}: ${item.title}`,
+              () => {
+                imageWrap.classList.add("is-placeholder");
+                setImagePendingPlaceholder(imageWrap, item.label);
+              }
+            );
+          } else {
+            const image = document.createElement("img");
+            image.src = item.imageUrl;
+            image.alt = `${item.label}: ${item.title}`;
+            image.loading = "lazy";
+            image.referrerPolicy = "no-referrer";
+            image.addEventListener("error", () => {
+              image.remove();
+              imageWrap.classList.add("is-placeholder");
+              setImagePendingPlaceholder(imageWrap, item.label);
+            }, { once: true });
+            imageWrap.appendChild(image);
+          }
         } else {
           imageWrap.classList.add("is-placeholder");
           setImagePendingPlaceholder(imageWrap, item.label);
@@ -2623,7 +2695,31 @@
 
         if (image) {
           try {
-            drawCanvasImageContain(ctx, image, imageX, imageY, imageWidth, insetImageHeight);
+            if (isSingleItem(item)) {
+              ctx.save();
+              ctx.filter = "blur(16px) saturate(1.25)";
+              drawCanvasImageCover(ctx, image, imageX - 12, imageY - 12, imageWidth + 24, insetImageHeight + 24);
+              ctx.restore();
+
+              ctx.fillStyle = "rgba(0, 0, 0, 0.26)";
+              ctx.fillRect(imageX, imageY, imageWidth, insetImageHeight);
+            }
+
+            if (isSingleItem(item)) {
+              const singleZoom = 1.16;
+              const zoomWidth = imageWidth * singleZoom;
+              const zoomHeight = insetImageHeight * singleZoom;
+              drawCanvasImageCover(
+                ctx,
+                image,
+                imageX - ((zoomWidth - imageWidth) / 2),
+                imageY - ((zoomHeight - insetImageHeight) / 2),
+                zoomWidth,
+                zoomHeight
+              );
+            } else {
+              drawCanvasImageContain(ctx, image, imageX, imageY, imageWidth, insetImageHeight);
+            }
           } catch (err) {
             ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
             ctx.fillRect(imageX, imageY, imageWidth, insetImageHeight);
@@ -2660,21 +2756,54 @@
         ctx.fillText("gamerewind.uk", contentX, box.y + box.height - 24);
       }
 
-      return canvas.toDataURL("image/png");
+      return canvas;
     }
 
-    function downloadShareCard(dataUrl, game) {
-      const link = document.createElement("a");
+    function getShareCardFileName(game, extension) {
       const monthAbbreviations = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const monthPart = monthAbbreviations[(game.month || 1) - 1] || "Month";
       const yearPart = String(game.year || "").slice(-2) || "YY";
-      const fileName = `RetroWeekend${monthPart}${yearPart}`;
+      return `RetroWeekend${monthPart}${yearPart}.${extension}`;
+    }
+
+    function canvasToBlob(canvas, type = "image/png", quality = 0.9) {
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), type, quality);
+      });
+    }
+
+    function isMobileShareDevice() {
+      return window.matchMedia("(pointer: coarse)").matches ||
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    }
+
+    function downloadShareCard(dataUrl, game, extension = "png") {
+      const link = document.createElement("a");
 
       link.href = dataUrl;
-      link.download = `${fileName}.png`;
+      link.download = getShareCardFileName(game, extension);
       document.body.appendChild(link);
       link.click();
       link.remove();
+    }
+
+    async function shareOrDownloadMobileJpg(canvas, game) {
+      const blob = await canvasToBlob(canvas, "image/jpeg", 0.9);
+      if (!blob) {
+        throw new Error("Could not create JPG");
+      }
+
+      const file = new File([blob], getShareCardFileName(game, "jpg"), { type: "image/jpeg" });
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: "My Game Rewind UK Retro Weekend",
+          text: "Made with Game Rewind UK"
+        });
+        return;
+      }
+
+      downloadShareCard(URL.createObjectURL(blob), game, "jpg");
     }
 
     function renderRetroWeekendCard(game, initialSelections = {}, initialIncludedCategories = null) {
@@ -2802,7 +2931,7 @@
       const downloadShareButton = document.createElement("button");
       downloadShareButton.type = "button";
       downloadShareButton.className = "share-card-button";
-      downloadShareButton.textContent = "Download PNG";
+      downloadShareButton.textContent = isMobileShareDevice() ? "Share JPG" : "Download PNG";
 
       const copyShareButton = document.createElement("button");
       copyShareButton.type = "button";
@@ -2815,6 +2944,7 @@
       closeShareButton.textContent = "Close";
 
       let shareCardDataUrl = "";
+      let shareCardCanvas = null;
       let selectedTemplateKey = SHARE_CARD_TEMPLATES[0].key;
 
       card.appendChild(kicker);
@@ -2965,6 +3095,7 @@
       templateSelect.addEventListener("change", () => {
         selectedTemplateKey = templateSelect.value;
         shareCardDataUrl = "";
+        shareCardCanvas = null;
         renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
       });
       downloadShareButton.addEventListener("click", async () => {
@@ -2972,16 +3103,24 @@
         downloadShareButton.textContent = "Preparing...";
 
         try {
-          if (!shareCardDataUrl) {
+          if (!shareCardCanvas) {
             const canvas = document.createElement("canvas");
-            shareCardDataUrl = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
+            shareCardCanvas = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
           }
-          downloadShareCard(shareCardDataUrl, game);
+
+          if (isMobileShareDevice()) {
+            await shareOrDownloadMobileJpg(shareCardCanvas, game);
+          } else {
+            if (!shareCardDataUrl) {
+              shareCardDataUrl = shareCardCanvas.toDataURL("image/png");
+            }
+            downloadShareCard(shareCardDataUrl, game, "png");
+          }
         } catch (err) {
           window.alert(`Download failed: ${err?.message || "Try another card style or reload the page."}`);
         } finally {
           downloadShareButton.disabled = false;
-          downloadShareButton.textContent = "Download PNG";
+          downloadShareButton.textContent = isMobileShareDevice() ? "Share JPG" : "Download PNG";
         }
       });
       copyShareButton.addEventListener("click", copyShareText);
@@ -3004,6 +3143,7 @@
         update(nextSelections) {
           currentSelections = nextSelections || {};
           shareCardDataUrl = "";
+          shareCardCanvas = null;
           syncCurrentShareUrl();
           renderTiles();
           if (!shareModal.classList.contains("is-hidden")) {
@@ -3025,6 +3165,7 @@
         div.className = "no-results";
         div.textContent = `No games found for "${query}". Check the spelling or your Games sheet.`;
         resultsEl.appendChild(div);
+        scrollResultViewToTop();
         return;
       }
 
@@ -3159,6 +3300,7 @@ getCoverUrlForGame(game).then((url) => {
 
         resultsEl.appendChild(card);
       });
+      scrollResultViewToTop();
     }
 
     function resetApp() {
