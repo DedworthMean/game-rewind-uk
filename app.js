@@ -64,165 +64,6 @@
       element.appendChild(textEl);
     }
 
-    function normalizeConsoleText(value) {
-      const normalized = String(value || "")
-        .toLowerCase()
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim()
-        .replace(/\s+/g, " ");
-
-      const aliases = {
-        "nintendo entertainment system": "nes",
-        "nintendo nes": "nes",
-        "nes": "nes",
-        "sega master system": "master system",
-        "master system": "master system",
-        "sega mega drive": "mega drive",
-        "mega drive": "mega drive",
-        "sega genesis": "mega drive",
-        "nintendo game boy": "game boy",
-        "game boy": "game boy",
-        "super nintendo": "snes",
-        "super nintendo entertainment system": "snes",
-        "nintendo snes": "snes",
-        "snes": "snes",
-        "sega mega cd": "mega cd",
-        "mega cd": "mega cd",
-        "sega mega drive 32x": "32x",
-        "mega drive 32x": "32x",
-        "sega 32x": "32x",
-        "32x": "32x",
-        "sega saturn": "saturn",
-        "saturn": "saturn",
-        "sony playstation": "playstation",
-        "playstation": "playstation",
-        "ps1": "playstation",
-        "nintendo 64 uk": "n64",
-        "nintendo 64": "n64",
-        "n64": "n64",
-        "sega dreamcast": "dreamcast",
-        "dreamcast": "dreamcast",
-        "sony playstation 2": "ps2",
-        "playstation 2": "ps2",
-        "ps2": "ps2",
-        "microsoft xbox": "xbox",
-        "xbox launch": "xbox",
-        "xbox": "xbox",
-        "nintendo gamecube": "gamecube",
-        "gamecube": "gamecube",
-        "nintendo game cube": "gamecube",
-        "game cube": "gamecube",
-        "game boy advance": "gba",
-        "gba": "gba",
-        "playstation portable": "psp",
-        "sony playstation portable": "psp",
-        "sony psp": "psp",
-        "psp": "psp",
-        "nintendo ds": "nintendo ds",
-        "ds": "nintendo ds",
-        "xbox 360": "xbox 360",
-        "microsoft xbox 360": "xbox 360",
-        "nintendo wii": "wii",
-        "wii": "wii",
-        "sony playstation 3": "ps3",
-        "playstation 3": "ps3",
-        "ps3": "ps3"
-      };
-
-      return aliases[normalized] || normalized;
-    }
-
-    function getConsoleLaunchKey(launch) {
-      return [launch.console, launch.month, launch.year].map(value => String(value || "")).join("|");
-    }
-
-    function getConsoleLaunchImageUrl(launch) {
-      if (launch.imageUrl) return launch.imageUrl;
-
-      const assetMap = {
-        nes: "NES.png",
-        "master system": "Master System.png",
-        "mega drive": "Mega Drive.png",
-        "game boy": "Game Boy.png",
-        snes: "Super Nintendo.png",
-        "mega cd": "Mega CD.png",
-        "32x": "Mega Drive 32x.png",
-        saturn: "Sega Saturn.png",
-        playstation: "PS1.png",
-        n64: "N64.png",
-        dreamcast: "Dreamcast.png",
-        ps2: "PS2.png",
-        xbox: "Xbox.png",
-        gamecube: "GameCube.png",
-        gba: "GBA.png",
-        psp: "PSP.png",
-        "nintendo ds": "Nintendo DS.png",
-        "xbox 360": "Xbox 360.png",
-        wii: "Wii.png",
-        ps3: "PS3.png"
-      };
-
-      const fileName = assetMap[normalizeConsoleText(launch.console)];
-      return fileName ? `console/${encodeURIComponent(fileName)}` : "";
-    }
-
-    function getConsoleLaunchesForMonth(month, year) {
-      return consoleLaunches
-        .filter((launch) => launch.month === month && launch.year === year)
-        .sort((a, b) => (a.console || "").localeCompare(b.console || ""));
-    }
-
-    function getNextMonthYear(month, year) {
-      if (month === 12) {
-        return { month: 1, year: year + 1 };
-      }
-
-      return { month: month + 1, year };
-    }
-
-    function isInConsoleLaunchWindow(game, launch) {
-      const next = getNextMonthYear(launch.month, launch.year);
-      return (
-        (game.month === launch.month && game.year === launch.year) ||
-        (game.month === next.month && game.year === next.year)
-      );
-    }
-
-    function getLaunchWindowLabel(launch) {
-      const next = getNextMonthYear(launch.month, launch.year);
-      return `${monthNameFromNumber(launch.month)} ${launch.year} - ${monthNameFromNumber(next.month)} ${next.year}`;
-    }
-
-    function getLaunchWindowGames(launch) {
-      const launchConsole = normalizeConsoleText(launch.console);
-      return games
-        .filter((game) =>
-          isInConsoleLaunchWindow(game, launch) &&
-          normalizeConsoleText(game.console) === launchConsole
-        )
-        .sort((a, b) =>
-          a.year - b.year ||
-          a.month - b.month ||
-          (a.title || "").localeCompare(b.title || "")
-        );
-    }
-
-    function getRestOfLaunchWindowGames(launch) {
-      const launchConsole = normalizeConsoleText(launch.console);
-      return games
-        .filter((game) =>
-          isInConsoleLaunchWindow(game, launch) &&
-          normalizeConsoleText(game.console) !== launchConsole
-        )
-        .sort((a, b) =>
-          a.year - b.year ||
-          a.month - b.month ||
-          (a.title || "").localeCompare(b.title || "")
-        );
-    }
-
     function getCultureCategoryDefinitions(month, year) {
       const keyCinema = filterEntriesByMonthYear(cinema, month, year);
       const keyMusic = filterEntriesByMonthYear(music, month, year);
@@ -402,33 +243,36 @@
       return card;
     }
 
-    function findConsoleLaunchMatches(query) {
-      const normalizedQuery = normalizeGameSearchText(query);
-      if (!normalizedQuery) return [];
-
-      return consoleLaunches.filter((launch) => {
-        const searchText = normalizeGameSearchText([
-          launch.console,
-          launch.headline,
-          monthNameFromNumber(launch.month),
-          launch.year,
-          "console launch"
-        ].join(" "));
-        return searchText.includes(normalizedQuery);
-      });
-    }
-
-    function findPrimaryConsoleLaunchMatch(query) {
-      const normalizedQuery = normalizeGameSearchText(query);
-      const normalizedConsoleQuery = normalizeConsoleText(query);
-      if (!normalizedQuery && !normalizedConsoleQuery) return null;
-
-      return consoleLaunches.find((launch) =>
-        normalizeConsoleText(launch.console) === normalizedConsoleQuery ||
-        normalizeGameSearchText(launch.console) === normalizedQuery ||
-        normalizeGameSearchText(launch.headline) === normalizedQuery
-      ) || null;
-    }
+    const consoleLaunchFeature = window.GameRewindConsoleLaunches.createConsoleLaunchFeature({
+      getState: () => ({
+        games,
+        consoleLaunches
+      }),
+      clearShareableUrl,
+      clearShareModals,
+      clearSuggestions,
+      createCultureCardForMonth,
+      getConsoleLaunchHistoryState,
+      getCoverUrlForGame,
+      monthNameFromNumber,
+      normalizeGameSearchText,
+      scrollResultViewToTop,
+      setImagePendingPlaceholder,
+      setLandingChromeVisible,
+      showSpecificGame,
+      syncSearchInputs,
+      writeViewHistory,
+      renderConsoleLaunchResult: (...args) => renderConsoleLaunchResult(...args)
+    });
+    const {
+      createConsoleLaunchPromo,
+      findConsoleLaunchFromHistoryState,
+      findConsoleLaunchMatches,
+      findPrimaryConsoleLaunchMatch,
+      getConsoleLaunchesForMonth,
+      normalizeConsoleText,
+      renderConsoleLaunchResult
+    } = consoleLaunchFeature;
 
     function showConsoleChooser(matches, baseQuery, options = {}) {
       const statusEl = document.getElementById("status");
@@ -763,16 +607,6 @@
       ) || null;
     }
 
-    function findConsoleLaunchFromHistoryState(viewState = {}) {
-      const normalizedConsole = normalizeConsoleText(viewState.console);
-
-      return consoleLaunches.find((launch) =>
-        normalizeConsoleText(launch.console) === normalizedConsole &&
-        Number(launch.month) === Number(viewState.month) &&
-        Number(launch.year) === Number(viewState.year)
-      ) || null;
-    }
-
     function restoreHistoryView(viewState) {
       if (!isLoaded) return;
 
@@ -862,223 +696,6 @@
       if (animateResults) {
         triggerResultsReveal();
       }
-    }
-
-    function createConsoleLaunchPromo(launch) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "console-launch-promo";
-      button.addEventListener("click", () => renderConsoleLaunchResult(launch));
-
-      const imageWrap = document.createElement("div");
-      imageWrap.className = "console-launch-promo-art";
-      const imageUrl = getConsoleLaunchImageUrl(launch);
-      if (imageUrl) {
-        const img = document.createElement("img");
-        img.src = imageUrl;
-        img.alt = launch.headline;
-        img.loading = "lazy";
-        img.addEventListener("error", () => {
-          img.remove();
-          setImagePendingPlaceholder(imageWrap, "Console launch");
-        }, { once: true });
-        imageWrap.appendChild(img);
-      } else {
-        setImagePendingPlaceholder(imageWrap, "Console launch");
-      }
-
-      const copy = document.createElement("div");
-      copy.className = "console-launch-promo-copy";
-
-      const kicker = document.createElement("div");
-      kicker.className = "console-launch-kicker";
-      kicker.textContent = "Console launch";
-
-      const title = document.createElement("div");
-      title.className = "console-launch-promo-title";
-      title.textContent = launch.headline;
-
-      const meta = document.createElement("div");
-      meta.className = "console-launch-meta";
-      meta.textContent = `${monthNameFromNumber(launch.month)} ${launch.year} / ${launch.console}`;
-
-      copy.appendChild(kicker);
-      copy.appendChild(title);
-      copy.appendChild(meta);
-      button.appendChild(imageWrap);
-      button.appendChild(copy);
-
-      return button;
-    }
-
-    function createLaunchGameCard(game) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "console-launch-game-card";
-      button.addEventListener("click", () => showSpecificGame(game, { populateInput: true }));
-
-      const cover = document.createElement("div");
-      cover.className = "console-launch-game-thumb";
-      setImagePendingPlaceholder(cover, game.console || "Game");
-
-      getCoverUrlForGame(game).then((url) => {
-        if (!url) return;
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = `${game.title} cover`;
-        img.loading = "lazy";
-        img.referrerPolicy = "no-referrer";
-        img.addEventListener("error", () => {
-          img.remove();
-          setImagePendingPlaceholder(cover, game.console || "Game");
-        }, { once: true });
-        cover.appendChild(img);
-      });
-
-      const name = document.createElement("div");
-      name.className = "retro-weekend-name";
-      name.textContent = game.title;
-
-      button.appendChild(cover);
-      button.appendChild(name);
-      return button;
-    }
-
-    function renderConsoleLaunchResult(launch, options = {}) {
-      const statusEl = document.getElementById("status");
-      const resultsEl = document.getElementById("results");
-      const launchGames = getLaunchWindowGames(launch);
-      const restOfMonth = getRestOfLaunchWindowGames(launch);
-      const imageUrl = getConsoleLaunchImageUrl(launch);
-      const launchWindowLabel = getLaunchWindowLabel(launch);
-
-      clearShareableUrl();
-      clearSuggestions();
-      clearShareModals();
-      setLandingChromeVisible(false);
-      if (!options.skipHistory) {
-        writeViewHistory(getConsoleLaunchHistoryState(launch));
-      }
-      syncSearchInputs(launch.console);
-      statusEl.textContent = `Showing ${launch.console} launch window - ${launchWindowLabel}.`;
-      resultsEl.innerHTML = "";
-
-      const hero = document.createElement("div");
-      hero.className = "console-launch-result";
-
-      const art = document.createElement("div");
-      art.className = "console-launch-result-art";
-      if (imageUrl) {
-        const img = document.createElement("img");
-        img.src = imageUrl;
-        img.alt = launch.headline;
-        img.addEventListener("error", () => {
-          img.remove();
-          setImagePendingPlaceholder(art, "Console launch");
-        }, { once: true });
-        art.appendChild(img);
-      } else {
-        setImagePendingPlaceholder(art, "Console launch");
-      }
-
-      const copy = document.createElement("div");
-      copy.className = "console-launch-result-copy";
-
-      const kicker = document.createElement("div");
-      kicker.className = "console-launch-kicker";
-      kicker.textContent = "Console launch";
-
-      const title = document.createElement("h1");
-      title.textContent = launch.headline;
-
-      const meta = document.createElement("div");
-      meta.className = "console-launch-meta";
-      meta.textContent = `${monthNameFromNumber(launch.month)} ${launch.year} / ${launch.console}`;
-
-      const description = document.createElement("p");
-      description.textContent = launch.description || `Explore the ${launch.console} launch window and the games sharing that UK release moment.`;
-
-      copy.appendChild(kicker);
-      copy.appendChild(title);
-      copy.appendChild(meta);
-      copy.appendChild(description);
-      hero.appendChild(art);
-      hero.appendChild(copy);
-      resultsEl.appendChild(hero);
-
-      const launchCard = document.createElement("div");
-      launchCard.className = "card console-launch-games-card";
-      const launchTitle = document.createElement("div");
-      launchTitle.className = "card-title";
-      launchTitle.textContent = `${launch.console} launch window games`;
-      const launchSubtitle = document.createElement("div");
-      launchSubtitle.className = "card-subtitle";
-      launchSubtitle.textContent = launchGames.length
-        ? `${launchGames.length} game${launchGames.length === 1 ? "" : "s"} released across ${launchWindowLabel}.`
-        : `Launch-window game data is still being added for ${launch.console}.`;
-
-      launchCard.appendChild(launchTitle);
-      launchCard.appendChild(launchSubtitle);
-
-      if (launchGames.length) {
-        const gameGrid = document.createElement("div");
-        gameGrid.className = "console-launch-game-grid";
-        launchGames.forEach((game) => gameGrid.appendChild(createLaunchGameCard(game)));
-        launchCard.appendChild(gameGrid);
-      } else {
-        const empty = document.createElement("div");
-        empty.className = "empty console-launch-empty";
-        empty.textContent = `We have the ${launch.console} UK launch in the archive, but the matching ${launchWindowLabel} game rows are not complete yet. Once those releases are added to the Games sheet, they will appear here automatically.`;
-        launchCard.appendChild(empty);
-      }
-
-      resultsEl.appendChild(launchCard);
-
-      const restCard = document.createElement("div");
-      restCard.className = "card";
-      const restTitle = document.createElement("div");
-      restTitle.className = "card-title";
-      restTitle.textContent = "The rest of this month's releases";
-      const restSubtitle = document.createElement("div");
-      restSubtitle.className = "card-subtitle";
-      restSubtitle.textContent = `${monthNameFromNumber(launch.month)} ${launch.year}`;
-
-      restCard.appendChild(restTitle);
-      restCard.appendChild(restSubtitle);
-
-      if (restOfMonth.length) {
-        const list = document.createElement("ul");
-        list.className = "month-games-list";
-        restOfMonth.forEach((game) => {
-          const li = document.createElement("li");
-          const link = document.createElement("a");
-          link.href = "#";
-          link.className = "clickable-game";
-          link.textContent = game.console ? `${game.title} - ${game.console}` : game.title;
-          link.addEventListener("click", (event) => {
-            event.preventDefault();
-            showSpecificGame(game, { populateInput: true });
-          });
-          li.appendChild(link);
-          list.appendChild(li);
-        });
-        restCard.appendChild(list);
-      } else {
-        const empty = document.createElement("div");
-        empty.className = "empty console-launch-empty";
-        empty.textContent = `No other game releases are listed for ${monthNameFromNumber(launch.month)} ${launch.year} yet.`;
-        restCard.appendChild(empty);
-      }
-
-      resultsEl.appendChild(restCard);
-
-      resultsEl.appendChild(createCultureCardForMonth(
-        launch.month,
-        launch.year,
-        "More from this launch month",
-        `${monthNameFromNumber(launch.month)} ${launch.year} culture picks from cinema, rental, music, kids TV, and wrestling.`
-      ));
-      scrollResultViewToTop();
     }
 
     function setRandomButtonSpinning(isSpinning) {
@@ -1313,258 +930,23 @@
       }
     }
 
-    
-
-    // ===== 4.75 Browse views (Date / Console) =====
-    function renderBrowseByDate(options = {}) {
-      const statusEl = document.getElementById("status");
-      const resultsEl = document.getElementById("results");
-      setLandingChromeVisible(false);
-      resultsEl.innerHTML = "";
-      if (!options.skipHistory) {
-        writeViewHistory({ type: "browse-date" });
-      }
-
-      if (!isLoaded) {
-        statusEl.textContent = "Still loading data. Try again in a moment.";
-        return;
-      }
-
-      statusEl.textContent = "Browse games by month and year.";
-
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = "Browse by date";
-
-      const subtitle = document.createElement("div");
-      subtitle.className = "card-subtitle";
-      subtitle.textContent = "Pick a month and year to see all games released then.";
-
-      card.appendChild(title);
-      card.appendChild(subtitle);
-
-      // Build month select
-      const monthSelect = document.createElement("select");
-      monthSelect.className = "browse-select";
-      monthSelect.setAttribute("aria-label", "Month");
-
-      for (let m = 1; m <= 12; m++) {
-        const opt = document.createElement("option");
-        opt.value = String(m);
-        opt.textContent = monthNameFromNumber(m);
-        monthSelect.appendChild(opt);
-      }
-      if (options.month) {
-        monthSelect.value = String(options.month);
-      }
-
-      // Build year select from data
-      const years = [...new Set(games.map(g => g.year))].sort((a, b) => b - a);
-      const yearSelect = document.createElement("select");
-      yearSelect.className = "browse-select";
-      yearSelect.setAttribute("aria-label", "Year");
-
-      years.forEach(y => {
-        const opt = document.createElement("option");
-        opt.value = String(y);
-        opt.textContent = String(y);
-        yearSelect.appendChild(opt);
-      });
-      if (options.year) {
-        yearSelect.value = String(options.year);
-      }
-
-      const goBtn = document.createElement("button");
-      goBtn.type = "button";
-      goBtn.className = "browse-action";
-      goBtn.textContent = "Show games";
-
-      const listWrap = document.createElement("div");
-      listWrap.className = "browse-list-wrap";
-
-      const list = document.createElement("ul");
-      list.className = "month-games-list";
-      listWrap.appendChild(list);
-
-      function addGameRow(g) {
-        const li = document.createElement("li");
-
-        const link = document.createElement("a");
-        link.href = "#";
-        link.className = "clickable-game";
-        link.textContent = g.console ? `${g.title} - ${g.console}` : g.title;
-
-        link.addEventListener("click", (event) => {
-          event.preventDefault();
-          showSpecificGame(g, { populateInput: true });
-        });
-
-        li.appendChild(link);
-        list.appendChild(li);
-      }
-
-      function renderList({ updateHistory = true } = {}) {
-        list.innerHTML = "";
-        const month = parseInt(monthSelect.value, 10);
-        const year = parseInt(yearSelect.value, 10);
-        if (updateHistory && !options.skipHistory) {
-          writeViewHistory({ type: "browse-date", month, year });
-        }
-
-        const group = games
-          .filter(g => g.month === month && g.year === year)
-          .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-        const launchMatches = getConsoleLaunchesForMonth(month, year);
-
-        if (!group.length && !launchMatches.length) {
-          const empty = document.createElement("div");
-          empty.className = "empty";
-          empty.textContent = `No games found for ${monthNameFromNumber(month)} ${year}.`;
-          listWrap.innerHTML = "";
-          listWrap.appendChild(empty);
-          return;
-        }
-
-        listWrap.innerHTML = "";
-        launchMatches.forEach((launch) => {
-          listWrap.appendChild(createConsoleLaunchPromo(launch));
-        });
-        listWrap.appendChild(list);
-        group.forEach(addGameRow);
-      }
-
-      goBtn.addEventListener("click", () => renderList());
-
-      card.appendChild(monthSelect);
-      card.appendChild(yearSelect);
-      card.appendChild(goBtn);
-      card.appendChild(listWrap);
-
-      resultsEl.appendChild(card);
-      if (options.showList) {
-        renderList({ updateHistory: false });
-      }
-      scrollResultViewToTop();
-    }
-
-    function renderBrowseByConsole(options = {}) {
-      const statusEl = document.getElementById("status");
-      const resultsEl = document.getElementById("results");
-      setLandingChromeVisible(false);
-      resultsEl.innerHTML = "";
-      if (!options.skipHistory) {
-        writeViewHistory({ type: "browse-console" });
-      }
-
-      if (!isLoaded) {
-        statusEl.textContent = "Still loading data. Try again in a moment.";
-        return;
-      }
-
-      statusEl.textContent = "Browse games by console.";
-
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = "Browse by console";
-
-      const subtitle = document.createElement("div");
-      subtitle.className = "card-subtitle";
-      subtitle.textContent = "Pick a console to see all games for it.";
-
-      card.appendChild(title);
-      card.appendChild(subtitle);
-
-      const consoles = [...new Set(games.map(g => (g.console || "").trim()).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b));
-
-      const consoleSelect = document.createElement("select");
-      consoleSelect.className = "browse-select";
-      consoleSelect.setAttribute("aria-label", "Console");
-
-      consoles.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c;
-        opt.textContent = c;
-        consoleSelect.appendChild(opt);
-      });
-      if (options.console) {
-        consoleSelect.value = options.console;
-      }
-
-      const goBtn = document.createElement("button");
-      goBtn.type = "button";
-      goBtn.className = "browse-action";
-      goBtn.textContent = "Show games";
-
-      const listWrap = document.createElement("div");
-      listWrap.className = "browse-list-wrap";
-
-      const list = document.createElement("ul");
-      list.className = "month-games-list";
-      listWrap.appendChild(list);
-
-      function addGameRow(g) {
-        const li = document.createElement("li");
-
-        const link = document.createElement("a");
-        link.href = "#";
-        link.className = "clickable-game";
-        link.textContent = `${g.title} - ${monthNameFromNumber(g.month)} ${g.year}`;
-
-        link.addEventListener("click", (event) => {
-          event.preventDefault();
-          showSpecificGame(g, { populateInput: true });
-        });
-
-        li.appendChild(link);
-        list.appendChild(li);
-      }
-
-      function renderList({ updateHistory = true } = {}) {
-        list.innerHTML = "";
-        const selected = consoleSelect.value;
-        if (updateHistory && !options.skipHistory) {
-          writeViewHistory({ type: "browse-console", console: selected });
-        }
-
-        const group = games
-          .filter(g => (g.console || "").trim() === selected)
-          .sort((a, b) =>
-          (a.title || "").trim().localeCompare((b.title || "").trim(), undefined, { sensitivity: "base" })
-        );
-
-        if (!group.length) {
-          const empty = document.createElement("div");
-          empty.className = "empty";
-          empty.textContent = `No games found for ${selected}.`;
-          listWrap.innerHTML = "";
-          listWrap.appendChild(empty);
-          return;
-        }
-
-        listWrap.innerHTML = "";
-        listWrap.appendChild(list);
-        group.forEach(addGameRow);
-      }
-
-      goBtn.addEventListener("click", () => renderList());
-
-      card.appendChild(consoleSelect);
-      card.appendChild(goBtn);
-      card.appendChild(listWrap);
-
-      resultsEl.appendChild(card);
-      if (options.showList) {
-        renderList({ updateHistory: false });
-      }
-      scrollResultViewToTop();
-    }
+    const browseFeature = window.GameRewindBrowse.createBrowseFeature({
+      getState: () => ({
+        games
+      }),
+      createConsoleLaunchPromo,
+      getConsoleLaunchesForMonth,
+      isLoaded: () => isLoaded,
+      monthNameFromNumber,
+      scrollResultViewToTop,
+      setLandingChromeVisible,
+      showSpecificGame,
+      writeViewHistory
+    });
+    const {
+      renderBrowseByConsole,
+      renderBrowseByDate
+    } = browseFeature;
 
     if (window.GameRewindBirthday) {
       const birthdayFeature = window.GameRewindBirthday.createBirthdayFeature({
@@ -2549,162 +1931,22 @@
       };
     }
 
-    function renderResults(matches, query, options = {}) {
-      const resultsEl = document.getElementById("results");
-      setLandingChromeVisible(false);
-      clearShareModals();
-      resultsEl.innerHTML = "";
-      const sharedGameKey = options.game ? getGameKey(options.game) : matches.length === 1 ? getGameKey(matches[0]) : "";
-      if (!options.skipHistory) {
-        if (matches.length === 1) {
-          writeViewHistory(getGameHistoryState(matches[0]));
-        } else {
-          writeViewHistory({ type: "search", query });
-        }
-      }
-
-      if (!matches.length) {
-        const div = document.createElement("div");
-        div.className = "no-results";
-        div.textContent = `No games found for "${query}". Check the spelling or your Games sheet.`;
-        resultsEl.appendChild(div);
-        scrollResultViewToTop();
-        return;
-      }
-
-      matches.forEach(game => {
-        const releaseSummary = document.createElement("div");
-        releaseSummary.className = "card release-summary";
-
-        const releaseLine = document.createElement("div");
-        releaseLine.className = "release-summary-line";
-        releaseLine.textContent =
-          `${game.title} - ${monthNameFromNumber(game.month)} ${game.year}` +
-          (game.console ? ` - ${game.console}` : "");
-
-        releaseSummary.appendChild(releaseLine);
-        resultsEl.appendChild(releaseSummary);
-
-        const card = document.createElement("div");
-        card.className = "card";
-
-const bg = document.createElement("div");
-bg.className = "card-bg";
-card.appendChild(bg);
-
-getCoverUrlForGame(game).then((url) => {
-  if (url) bg.style.backgroundImage = `url('${url}')`;
-});
-
-
-        const header = document.createElement("div");
-        header.className = "card-header";
-
-        const main = document.createElement("div");
-        main.className = "card-header-main";
-
-        const title = document.createElement("div");
-        title.className = "card-title";
-        title.textContent = "The rest of this month's releases";
-
-        main.appendChild(title);
-
-        const subtitle = document.createElement("div");
-        subtitle.className = "card-subtitle picks-subtitle";
-        subtitle.textContent = "Make your own retro picks to create your ideal retro weekend.";
-        main.appendChild(subtitle);
-
-        header.appendChild(main);
-
-        card.appendChild(header);
-
-        const cultureCategories = getCultureCategoryDefinitions(game.month, game.year);
-        const defaultSelections = getDefaultRetroWeekendSelections(game);
-        const isSharedGame = sharedGameKey && getGameKey(game) === sharedGameKey;
-        let savedSelections = isSharedGame ? { ...(options.initialSelections || {}) } : {};
-        let effectiveSelections = mergeRetroWeekendSelections(defaultSelections, savedSelections);
-        const retroWeekendController = renderRetroWeekendCard(
-          game,
-          effectiveSelections,
-          isSharedGame ? options.includedCategories : null
-        );
-        resultsEl.appendChild(retroWeekendController.card);
-
-        function renderSections() {
-          card.replaceChildren(bg, header);
-          appendCultureSections(card, cultureCategories, savedSelections, toggleCustomSelection);
-        }
-
-        function preserveScrollPosition(updateFn, anchorEl = null) {
-          const scrollX = window.scrollX;
-          const scrollY = window.scrollY;
-          const anchorTop = anchorEl ? anchorEl.getBoundingClientRect().top : null;
-          const root = document.documentElement;
-          const previousScrollBehavior = root.style.scrollBehavior;
-
-          root.style.scrollBehavior = "auto";
-          updateFn();
-
-          function restorePosition() {
-            if (anchorEl && anchorTop !== null && document.body.contains(anchorEl)) {
-              const nextTop = anchorEl.getBoundingClientRect().top;
-              window.scrollBy(0, nextTop - anchorTop);
-              return;
-            }
-
-            window.scrollTo(scrollX, scrollY);
-          }
-
-          restorePosition();
-          requestAnimationFrame(() => {
-            restorePosition();
-            root.style.scrollBehavior = previousScrollBehavior;
-          });
-        }
-
-        function updatePickButtonStates() {
-          card.querySelectorAll(".pick-button").forEach((button) => {
-            const categoryKey = button.dataset.categoryKey;
-            const itemTitle = button.dataset.itemTitle;
-            const isSelected = Boolean(
-              categoryKey &&
-              itemTitle &&
-              savedSelections[categoryKey] &&
-              savedSelections[categoryKey].title === itemTitle
-            );
-
-            button.classList.toggle("is-selected", isSelected);
-            button.textContent = isSelected ? "Picked" : "Pick";
-          });
-        }
-
-        function toggleCustomSelection(category, item, anchorEl = null) {
-          if (!category || !item || !item.title) return;
-
-          if (savedSelections[category.key] && savedSelections[category.key].title === item.title) {
-            delete savedSelections[category.key];
-          } else {
-            savedSelections[category.key] = {
-              title: item.title,
-              imageUrl: item.imageUrl || "",
-              url: item.url || "",
-              linkMode: category.linkMode || ""
-            };
-          }
-
-          effectiveSelections = mergeRetroWeekendSelections(defaultSelections, savedSelections);
-          preserveScrollPosition(() => {
-            retroWeekendController.update(effectiveSelections);
-            updatePickButtonStates();
-          }, anchorEl);
-        }
-
-        renderSections();
-
-        resultsEl.appendChild(card);
-      });
-      scrollResultViewToTop();
-    }
+    const resultRenderer = window.GameRewindResultRenderer.createResultRenderer({
+      appendCultureSections,
+      clearShareModals,
+      getCoverUrlForGame,
+      getCultureCategoryDefinitions,
+      getDefaultRetroWeekendSelections,
+      getGameHistoryState,
+      getGameKey,
+      mergeRetroWeekendSelections,
+      monthNameFromNumber,
+      renderRetroWeekendCard,
+      scrollResultViewToTop,
+      setLandingChromeVisible,
+      writeViewHistory
+    });
+    const { renderResults } = resultRenderer;
 
     function resetApp(options = {}) {
       const statusEl = document.getElementById("status");

@@ -44,16 +44,19 @@ Current supporting feature files:
 - `share-card-backgrounds.js`: embedded share-card template backgrounds.
 - `share-card-templates.js`: share-card template configuration data.
 - `share-card.js`: share-card text generation, HTML preview, canvas rendering, PNG/JPG export, and mobile share helpers.
+- `console-launches.js`: console aliases, launch artwork lookup, launch-window logic, console launch promos, and console launch result pages.
+- `browse.js`: Browse by Date and Browse by Console screens, including selected-list history states.
 - `birthday.js`: Birthday List rendering and timeline logic.
-- `app.js`: main app wiring, search, browse, console launches, result rendering, Retro Weekend card shell, and history routing.
+- `render-results.js`: main game result rendering, culture-section rendering coordination, Retro Weekend pick updates, and result history state writes.
+- `app.js`: main app wiring, data loading, search, random picks, homepage month issue, culture data helpers, Retro Weekend card shell, and history routing.
 
 The page loads these scripts in `index.html` before `app.js`. Keep that order unless the dependencies are changed.
 
 Suggested next JavaScript split:
 
-- Move the remaining Retro Weekend card shell/tile UI into `share-card.js`, or leave it until result rendering is split.
-- Move console launch helpers/pages into `console-launches.js`.
-- Move browse views into `browse.js`.
+- Move the remaining Retro Weekend card shell/tile UI into `share-card.js`, or leave it until the UI is redesigned.
+- Move search/autocomplete into `search.js`.
+- Move homepage month issue and random game logic into their own module if `app.js` needs to shrink further.
 
 ### Console Launch Pages
 
