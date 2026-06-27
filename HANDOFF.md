@@ -43,16 +43,17 @@ Current supporting feature files:
 - `game-rewind-data.js`: Google Sheet loading, parsing, and cover lookup helpers.
 - `share-card-backgrounds.js`: embedded share-card template backgrounds.
 - `share-card-templates.js`: share-card template configuration data.
+- `share-card.js`: share-card text generation, HTML preview, canvas rendering, PNG/JPG export, and mobile share helpers.
 - `birthday.js`: Birthday List rendering and timeline logic.
-- `app.js`: main app wiring, search, browse, console launches, result rendering, share-card rendering, and history routing.
+- `app.js`: main app wiring, search, browse, console launches, result rendering, Retro Weekend card shell, and history routing.
 
 The page loads these scripts in `index.html` before `app.js`. Keep that order unless the dependencies are changed.
 
 Suggested next JavaScript split:
 
-- Move share-card rendering/export logic into `share-card.js`.
-- Then move console launch helpers/pages into `console-launches.js`.
-- Then move browse views into `browse.js`.
+- Move the remaining Retro Weekend card shell/tile UI into `share-card.js`, or leave it until result rendering is split.
+- Move console launch helpers/pages into `console-launches.js`.
+- Move browse views into `browse.js`.
 
 ### Console Launch Pages
 
