@@ -226,6 +226,22 @@ button {
   line-height: 1.65;
 }
 
+.about-hero {
+  min-height: auto;
+}
+
+.about-hero .hero-copy-block {
+  max-width: 68rem;
+}
+
+.about-hero .hero-title {
+  max-width: 16ch;
+}
+
+.about-hero .hero-copy {
+  max-width: 62rem;
+}
+
 .hero-highlights {
   display: flex;
   flex-wrap: wrap;
