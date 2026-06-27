@@ -23,109 +23,14 @@
     let isLoaded = false;
     let isRestoringHistory = false;
     let uniqueGameTitles = [];
+    let renderBirthdayList = () => {};
     const APP_HISTORY_KEY = "game-rewind-view";
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
     const MAX_SECTION_ITEMS = 20;
     const MAX_MONTH_GAMES = 20;
     const SHARE_CATEGORY_KEYS = ["game", "cinema", "rental", "music", "cartoons", "wwe"];
     const PICK_CATEGORY_KEYS = ["cinema", "rental", "music", "cartoons", "wwe"];
-    const SHARE_CARD_TEMPLATES = [
-      {
-        key: "standard",
-        label: "Standard",
-        backgroundUrl: "",
-        text: "#fff6d8",
-        muted: "#ffd84a",
-        accent: "#46dfff",
-        footer: "#ff405c",
-        panel: "rgba(0, 0, 0, 0)",
-        showTemplateTag: false,
-        box: { x: 72, y: 72, width: 936, height: 1776 }
-      },
-      {
-        key: "magazine",
-        label: "Magazine",
-        backgroundUrl: "share-card-templates/magazine.png",
-        text: "#ffffff",
-        muted: "#ffd84a",
-        accent: "#ff1714",
-        footer: "#ffffff",
-        panel: "rgba(0, 0, 0, 0)",
-        showBrand: false,
-        showTemplateTag: false,
-        showFooter: false,
-        box: { x: 310, y: 390, width: 740, height: 1380 }
-      },
-      {
-        key: "80s-movie",
-        label: "80's Movie",
-        backgroundUrl: "share-card-templates/80s-movie.png",
-        text: "#ffffff",
-        muted: "#ff7a32",
-        accent: "#ff4ac4",
-        footer: "#ffd84a",
-        panel: "rgba(0, 0, 0, 0.35)",
-        showBrand: false,
-        showTemplateTag: false,
-        box: { x: 80, y: 560, width: 920, height: 1280 }
-      },
-      {
-        key: "game-box",
-        label: "Game Box",
-        backgroundUrl: "share-card-templates/game-box.png",
-        text: "#111827",
-        muted: "#c01820",
-        accent: "#0b55b8",
-        footer: "#c01820",
-        panel: "rgba(255, 255, 255, 0)",
-        showBrand: false,
-        showTemplateTag: false,
-        showFooter: false,
-        box: { x: 92, y: 337, width: 896, height: 1028 }
-      },
-      {
-        key: "web-y2k",
-        label: "Web Y2K",
-        backgroundUrl: "share-card-templates/web-y2k.png",
-        text: "#063075",
-        muted: "#0d4fbd",
-        accent: "#1f66d5",
-        footer: "#063075",
-        panel: "#f3f3f3",
-        showBrand: false,
-        showTemplateTag: false,
-        showFooter: false,
-        box: { x: 256, y: 318, width: 560, height: 940 }
-      },
-      {
-        key: "teletext",
-        label: "Teletext",
-        backgroundUrl: "share-card-templates/teletext.png",
-        text: "#ffffff",
-        muted: "#ffff00",
-        accent: "#00ffff",
-        footer: "#00ff00",
-        panel: "rgba(0, 0, 0, 0)",
-        showBrand: false,
-        showTemplateTag: false,
-        showFooter: false,
-        box: { x: 50, y: 250, width: 980, height: 760 }
-      },
-      {
-        key: "vhs-tape",
-        label: "VHS Tape",
-        backgroundUrl: "share-card-templates/vhs-tape.png",
-        text: "#fff6d8",
-        muted: "#f0c07a",
-        accent: "#ff7a32",
-        footer: "#f0c07a",
-        panel: "rgba(0, 0, 0, 0.28)",
-        showBrand: false,
-        showTemplateTag: false,
-        showFooter: false,
-        box: { x: 110, y: 520, width: 630, height: 760 }
-      }
-    ];
+    const SHARE_CARD_TEMPLATES = window.GameRewindShareCardTemplates || [];
 
     function getShareCardTemplate(templateKey) {
       return SHARE_CARD_TEMPLATES.find((template) => template.key === templateKey) || SHARE_CARD_TEMPLATES[0];
@@ -1670,266 +1575,29 @@
       scrollResultViewToTop();
     }
 
-    function getArchiveYearRange() {
-      const years = [
-        ...games.map((entry) => entry.year),
-        ...cinema.map((entry) => entry.year),
-        ...music.map((entry) => entry.year),
-        ...wwe.map((entry) => entry.year),
-        ...rental.map((entry) => entry.year),
-        ...cartoons.map((entry) => entry.year),
-        ...consoleLaunches.map((entry) => entry.year)
-      ].filter(Boolean);
-
-      return {
-        min: Math.min(...years),
-        max: Math.max(...years)
-      };
-    }
-
-    function parseBirthdayDate(value) {
-      const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (!match) return null;
-
-      const year = Number(match[1]);
-      const month = Number(match[2]);
-      const day = Number(match[3]);
-      if (!year || !month || !day) return null;
-
-      return { year, month, day };
-    }
-
-    function formatBirthdayLabel(day, month) {
-      return `${day} ${monthNameFromNumber(month)}`;
-    }
-
-    function getBirthdayTimelineRows(birthday) {
-      const range = getArchiveYearRange();
-      if (!Number.isFinite(range.min) || !Number.isFinite(range.max)) return [];
-
-      const startYear = Math.max(birthday.year, range.min);
-      const rows = [];
-
-      for (let year = startYear; year <= range.max; year += 1) {
-        const month = birthday.month;
-        const gameMatches = games
-          .filter((game) => game.month === month && game.year === year)
-          .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-        const cultureCategories = getCultureCategoryDefinitions(month, year);
-        const launchMatches = getConsoleLaunchesForMonth(month, year);
-        const cultureCount = cultureCategories.reduce((total, category) => total + category.items.length, 0);
-        const totalCount = gameMatches.length + cultureCount + launchMatches.length;
-
-        if (!totalCount) continue;
-
-        rows.push({
-          year,
-          age: year - birthday.year,
-          month,
-          games: gameMatches,
-          launches: launchMatches,
-          cultureCategories,
-          totalCount
-        });
-      }
-
-      return rows;
-    }
-
-    function createBirthdayTimelineCard(row) {
-      const card = document.createElement("div");
-      card.className = "birthday-year-card";
-
-      const yearColumn = document.createElement("div");
-      yearColumn.className = "birthday-year-marker";
-
-      const year = document.createElement("div");
-      year.className = "birthday-year";
-      year.textContent = String(row.year);
-
-      const age = document.createElement("div");
-      age.className = "birthday-age";
-      age.textContent = row.age === 0 ? "Born" : `Age ${row.age}`;
-
-      yearColumn.appendChild(year);
-      yearColumn.appendChild(age);
-
-      const body = document.createElement("div");
-      body.className = "birthday-year-body";
-
-      const title = document.createElement("div");
-      title.className = "birthday-year-title";
-      title.textContent = `${monthNameFromNumber(row.month)} ${row.year}`;
-
-      const meta = document.createElement("div");
-      meta.className = "birthday-year-meta";
-      meta.textContent = `${row.games.length} game${row.games.length === 1 ? "" : "s"} / ${row.totalCount} archive item${row.totalCount === 1 ? "" : "s"}`;
-
-      body.appendChild(title);
-      body.appendChild(meta);
-
-      if (row.launches.length) {
-        const launchList = document.createElement("div");
-        launchList.className = "birthday-launch-list";
-        row.launches.forEach((launch) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "birthday-launch-pill";
-          button.textContent = launch.console ? `${launch.console} launch` : "Console launch";
-          button.addEventListener("click", () => renderConsoleLaunchResult(launch));
-          launchList.appendChild(button);
-        });
-        body.appendChild(launchList);
-      }
-
-      if (row.games.length) {
-        const gamesList = document.createElement("ul");
-        gamesList.className = "birthday-game-list";
-
-        function addGameRow(game) {
-          const li = document.createElement("li");
-          const link = document.createElement("a");
-          link.href = "#";
-          link.className = "clickable-game";
-          link.textContent = game.console ? `${game.title} - ${game.console}` : game.title;
-          link.addEventListener("click", (event) => {
-            event.preventDefault();
-            showSpecificGame(game, { populateInput: true });
-          });
-          li.appendChild(link);
-          gamesList.appendChild(li);
-        }
-
-        row.games.slice(0, 5).forEach(addGameRow);
-        body.appendChild(gamesList);
-
-        if (row.games.length > 5) {
-          const more = document.createElement("button");
-          more.type = "button";
-          more.className = "birthday-more";
-          more.textContent = `+ ${row.games.length - 5} more game${row.games.length - 5 === 1 ? "" : "s"}`;
-          more.addEventListener("click", () => {
-            row.games.slice(5).forEach(addGameRow);
-            more.remove();
-          });
-          body.appendChild(more);
-        }
-      }
-
-      const cultureLine = document.createElement("div");
-      cultureLine.className = "birthday-culture-line";
-      cultureLine.textContent = row.cultureCategories
-        .map((category) => `${category.label}: ${category.items.length}`)
-        .join(" / ");
-      body.appendChild(cultureLine);
-
-      card.appendChild(yearColumn);
-      card.appendChild(body);
-      return card;
-    }
-
-    function renderBirthdayList(options = {}) {
-      const statusEl = document.getElementById("status");
-      const resultsEl = document.getElementById("results");
-      setLandingChromeVisible(false);
-      resultsEl.innerHTML = "";
-      if (!options.skipHistory) {
-        writeViewHistory({ type: "birthday" });
-      }
-
-      if (!isLoaded) {
-        statusEl.textContent = "Still loading data. Try again in a moment.";
-        return;
-      }
-
-      statusEl.textContent = "Enter a birthday to build a month-by-month culture timeline.";
-
-      const card = document.createElement("div");
-      card.className = "card birthday-card";
-
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = "Birthday list";
-
-      const subtitle = document.createElement("div");
-      subtitle.className = "card-subtitle";
-      subtitle.textContent = "Enter a birth date and see archive releases from that birthday month across the years.";
-
-      const form = document.createElement("form");
-      form.className = "birthday-form";
-
-      const dateInput = document.createElement("input");
-      dateInput.type = "date";
-      dateInput.className = "birthday-date-input";
-      dateInput.required = true;
-      dateInput.setAttribute("aria-label", "Birth date");
-      dateInput.min = "1970-01-01";
-      if (options.date) {
-        dateInput.value = options.date;
-      }
-
-      const goBtn = document.createElement("button");
-      goBtn.type = "submit";
-      goBtn.className = "browse-action";
-      goBtn.textContent = "Build list";
-
-      form.appendChild(dateInput);
-      form.appendChild(goBtn);
-
-      const timelineWrap = document.createElement("div");
-      timelineWrap.className = "birthday-timeline-wrap";
-
-      function renderTimeline({ updateHistory = true } = {}) {
-        const birthday = parseBirthdayDate(dateInput.value);
-        if (!birthday) {
-          timelineWrap.innerHTML = "";
-          const empty = document.createElement("div");
-          empty.className = "empty";
-          empty.textContent = "Choose a full birth date to build your Birthday List.";
-          timelineWrap.appendChild(empty);
-          return;
-        }
-
-        const rows = getBirthdayTimelineRows(birthday);
-        timelineWrap.innerHTML = "";
-
-        const summary = document.createElement("div");
-        summary.className = "birthday-summary";
-        summary.textContent = rows.length
-          ? `${formatBirthdayLabel(birthday.day, birthday.month)}: ${rows.length} archive year${rows.length === 1 ? "" : "s"} found from ${rows[0].year} to ${rows[rows.length - 1].year}.`
-          : `No archive matches found for ${formatBirthdayLabel(birthday.day, birthday.month)} from ${birthday.year} onward.`;
-        timelineWrap.appendChild(summary);
-
-        statusEl.textContent = `Birthday List for ${formatBirthdayLabel(birthday.day, birthday.month)}.`;
-        if (updateHistory && !options.skipHistory) {
-          writeViewHistory({ type: "birthday", date: dateInput.value });
-        }
-
-        if (!rows.length) return;
-
-        const timeline = document.createElement("div");
-        timeline.className = "birthday-timeline";
-        rows.forEach((row) => timeline.appendChild(createBirthdayTimelineCard(row)));
-        timelineWrap.appendChild(timeline);
-      }
-
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-        renderTimeline();
+    if (window.GameRewindBirthday) {
+      const birthdayFeature = window.GameRewindBirthday.createBirthdayFeature({
+        getState: () => ({
+          games,
+          cinema,
+          music,
+          wwe,
+          rental,
+          cartoons,
+          consoleLaunches
+        }),
+        isLoaded: () => isLoaded,
+        monthNameFromNumber,
+        getCultureCategoryDefinitions,
+        getConsoleLaunchesForMonth,
+        renderConsoleLaunchResult,
+        showSpecificGame,
+        setLandingChromeVisible,
+        scrollResultViewToTop,
+        writeViewHistory
       });
 
-      card.appendChild(title);
-      card.appendChild(subtitle);
-      card.appendChild(form);
-      card.appendChild(timelineWrap);
-      resultsEl.appendChild(card);
-      if (options.showTimeline) {
-        renderTimeline({ updateHistory: false });
-      }
-      scrollResultViewToTop();
-      if (options.focusInput !== false) {
-        dateInput.focus();
-      }
+      renderBirthdayList = birthdayFeature.renderBirthdayList;
     }
 
     async function loadDataIntoApp() {

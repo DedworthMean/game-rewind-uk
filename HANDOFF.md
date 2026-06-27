@@ -34,6 +34,26 @@ If it is not running, start it from the active project folder with Python HTTP s
 
 ## Current Feature State
 
+### JavaScript File Layout
+
+The app is still mostly run from `app.js`, but the first low-risk split has been done.
+
+Current supporting feature files:
+
+- `game-rewind-data.js`: Google Sheet loading, parsing, and cover lookup helpers.
+- `share-card-backgrounds.js`: embedded share-card template backgrounds.
+- `share-card-templates.js`: share-card template configuration data.
+- `birthday.js`: Birthday List rendering and timeline logic.
+- `app.js`: main app wiring, search, browse, console launches, result rendering, share-card rendering, and history routing.
+
+The page loads these scripts in `index.html` before `app.js`. Keep that order unless the dependencies are changed.
+
+Suggested next JavaScript split:
+
+- Move share-card rendering/export logic into `share-card.js`.
+- Then move console launch helpers/pages into `console-launches.js`.
+- Then move browse views into `browse.js`.
+
 ### Console Launch Pages
 
 A Google Sheet tab named `Console` is loaded by `game-rewind-data.js`.
