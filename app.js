@@ -21,7 +21,9 @@
     let randomSpinTimer = null;
     let isRandomSpinning = false;
     let isLoaded = false;
+    let isRestoringHistory = false;
     let uniqueGameTitles = [];
+    const APP_HISTORY_KEY = "game-rewind-view";
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
     const MAX_SECTION_ITEMS = 20;
     const MAX_MONTH_GAMES = 20;
@@ -532,10 +534,13 @@
       ) || null;
     }
 
-    function showConsoleChooser(matches, baseQuery) {
+    function showConsoleChooser(matches, baseQuery, options = {}) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
+      if (!options.skipHistory) {
+        writeViewHistory({ type: "search", query: baseQuery });
+      }
 
       statusEl.textContent = `Multiple versions found for "${baseQuery}". Choose a console.`;
       resultsEl.innerHTML = "";
@@ -578,11 +583,11 @@
       scrollResultViewToTop();
     }
 
-    function handleGameSelection(query, { populateInput = false } = {}) {
+    function handleGameSelection(query, { populateInput = false, skipHistory = false } = {}) {
       const statusEl = document.getElementById("status");
       const primaryLaunchMatch = findPrimaryConsoleLaunchMatch(query);
       if (primaryLaunchMatch) {
-        renderConsoleLaunchResult(primaryLaunchMatch);
+        renderConsoleLaunchResult(primaryLaunchMatch, { skipHistory });
         return;
       }
 
@@ -591,18 +596,18 @@
       if (!matches.length) {
         const launchMatches = findConsoleLaunchMatches(query);
         if (launchMatches.length) {
-          renderConsoleLaunchResult(launchMatches[0]);
+          renderConsoleLaunchResult(launchMatches[0], { skipHistory });
           return;
         }
 
         statusEl.textContent = `No games found for "${query}".`;
-        renderResults([], query);
+        renderResults([], query, { skipHistory });
         return;
       }
 
       const consoles = [...new Set(matches.map((match) => (match.console || "").trim()))];
       if (matches.length > 1 && consoles.length > 1) {
-        showConsoleChooser(matches, query);
+        showConsoleChooser(matches, query, { skipHistory });
         return;
       }
 
@@ -611,7 +616,7 @@
       }
 
       statusEl.textContent = `Found ${matches.length} matching game(s).`;
-      renderResults(matches, query);
+      renderResults(matches, query, { skipHistory });
     }
 
     function getGameKey(game) {
@@ -755,8 +760,7 @@
 
       const url = new URL(window.location.href);
       url.search = "";
-      url.hash = "";
-      window.history.replaceState({}, "", url.toString());
+      window.history.replaceState(window.history.state || {}, "", url.toString());
     }
 
     function scrollResultViewToTop() {
@@ -765,6 +769,181 @@
         if (!target) return;
         target.scrollIntoView({ block: "start", behavior: "auto" });
       });
+    }
+
+    function getGameHistoryState(game) {
+      if (!game) return null;
+
+      return {
+        type: "game",
+        title: game.title || "",
+        console: game.console || "",
+        month: Number(game.month) || 0,
+        year: Number(game.year) || 0
+      };
+    }
+
+    function getConsoleLaunchHistoryState(launch) {
+      if (!launch) return null;
+
+      return {
+        type: "console-launch",
+        console: launch.console || "",
+        month: Number(launch.month) || 0,
+        year: Number(launch.year) || 0
+      };
+    }
+
+    function serializeViewState(viewState = {}) {
+      const params = new URLSearchParams();
+      params.set("view", viewState.type || "home");
+
+      ["title", "console", "query", "date"].forEach((key) => {
+        if (viewState[key]) {
+          params.set(key, viewState[key]);
+        }
+      });
+
+      ["month", "year"].forEach((key) => {
+        if (viewState[key]) {
+          params.set(key, String(viewState[key]));
+        }
+      });
+
+      return params.toString();
+    }
+
+    function parseViewStateFromHash() {
+      const rawHash = window.location.hash.replace(/^#/, "");
+      if (!rawHash) return null;
+
+      const params = new URLSearchParams(rawHash);
+      const type = params.get("view");
+      if (!type) return null;
+
+      return {
+        type,
+        title: params.get("title") || "",
+        console: params.get("console") || "",
+        query: params.get("query") || "",
+        date: params.get("date") || "",
+        month: Number(params.get("month")) || 0,
+        year: Number(params.get("year")) || 0
+      };
+    }
+
+    function getHistoryUrl(viewState) {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = serializeViewState(viewState);
+      return url.toString();
+    }
+
+    function writeViewHistory(viewState, { replace = false } = {}) {
+      if (isRestoringHistory || !viewState || !viewState.type) return;
+
+      const state = {
+        [APP_HISTORY_KEY]: true,
+        view: viewState
+      };
+      const url = getHistoryUrl(viewState);
+
+      if (replace) {
+        window.history.replaceState(state, "", url);
+      } else {
+        window.history.pushState(state, "", url);
+      }
+    }
+
+    function findGameFromHistoryState(viewState = {}) {
+      const normalizedTitle = normalizeGameSearchText(viewState.title);
+      const normalizedConsole = normalizeLookupText(viewState.console);
+
+      return games.find((game) =>
+        normalizeGameSearchText(game.title) === normalizedTitle &&
+        Number(game.month) === Number(viewState.month) &&
+        Number(game.year) === Number(viewState.year) &&
+        (!normalizedConsole || normalizeLookupText(game.console) === normalizedConsole)
+      ) || null;
+    }
+
+    function findConsoleLaunchFromHistoryState(viewState = {}) {
+      const normalizedConsole = normalizeConsoleText(viewState.console);
+
+      return consoleLaunches.find((launch) =>
+        normalizeConsoleText(launch.console) === normalizedConsole &&
+        Number(launch.month) === Number(viewState.month) &&
+        Number(launch.year) === Number(viewState.year)
+      ) || null;
+    }
+
+    function restoreHistoryView(viewState) {
+      if (!isLoaded) return;
+
+      isRestoringHistory = true;
+      clearSuggestions();
+      clearShareModals();
+
+      try {
+        if (!viewState || viewState.type === "home") {
+          resetApp({ skipHistory: true, focusInput: false });
+          return;
+        }
+
+        if (viewState.type === "game") {
+          const game = findGameFromHistoryState(viewState);
+          if (game) {
+            showSpecificGame(game, { populateInput: true, skipHistory: true });
+            return;
+          }
+        }
+
+        if (viewState.type === "console-launch") {
+          const launch = findConsoleLaunchFromHistoryState(viewState);
+          if (launch) {
+            renderConsoleLaunchResult(launch, { skipHistory: true });
+            return;
+          }
+        }
+
+        if (viewState.type === "browse-date") {
+          renderBrowseByDate({
+            skipHistory: true,
+            month: viewState.month,
+            year: viewState.year,
+            showList: Boolean(viewState.month && viewState.year)
+          });
+          return;
+        }
+
+        if (viewState.type === "browse-console") {
+          renderBrowseByConsole({
+            skipHistory: true,
+            console: viewState.console,
+            showList: Boolean(viewState.console)
+          });
+          return;
+        }
+
+        if (viewState.type === "birthday") {
+          renderBirthdayList({
+            skipHistory: true,
+            date: viewState.date,
+            showTimeline: Boolean(viewState.date)
+          });
+          return;
+        }
+
+        if (viewState.type === "search" && viewState.query) {
+          syncSearchInputs(viewState.query);
+          handleGameSelection(viewState.query, { populateInput: true, skipHistory: true });
+          return;
+        }
+
+        resetApp({ skipHistory: true, focusInput: false });
+      } finally {
+        isRestoringHistory = false;
+      }
     }
 
     function triggerResultsReveal() {
@@ -869,7 +1048,7 @@
       return button;
     }
 
-    function renderConsoleLaunchResult(launch) {
+    function renderConsoleLaunchResult(launch, options = {}) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
       const launchGames = getLaunchWindowGames(launch);
@@ -881,6 +1060,9 @@
       clearSuggestions();
       clearShareModals();
       setLandingChromeVisible(false);
+      if (!options.skipHistory) {
+        writeViewHistory(getConsoleLaunchHistoryState(launch));
+      }
       syncSearchInputs(launch.console);
       statusEl.textContent = `Showing ${launch.console} launch window - ${launchWindowLabel}.`;
       resultsEl.innerHTML = "";
@@ -1238,11 +1420,14 @@
     
 
     // ===== 4.75 Browse views (Date / Console) =====
-    function renderBrowseByDate() {
+    function renderBrowseByDate(options = {}) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
       resultsEl.innerHTML = "";
+      if (!options.skipHistory) {
+        writeViewHistory({ type: "browse-date" });
+      }
 
       if (!isLoaded) {
         statusEl.textContent = "Still loading data. Try again in a moment.";
@@ -1276,6 +1461,9 @@
         opt.textContent = monthNameFromNumber(m);
         monthSelect.appendChild(opt);
       }
+      if (options.month) {
+        monthSelect.value = String(options.month);
+      }
 
       // Build year select from data
       const years = [...new Set(games.map(g => g.year))].sort((a, b) => b - a);
@@ -1289,6 +1477,9 @@
         opt.textContent = String(y);
         yearSelect.appendChild(opt);
       });
+      if (options.year) {
+        yearSelect.value = String(options.year);
+      }
 
       const goBtn = document.createElement("button");
       goBtn.type = "button";
@@ -1319,10 +1510,13 @@
         list.appendChild(li);
       }
 
-      function renderList() {
+      function renderList({ updateHistory = true } = {}) {
         list.innerHTML = "";
         const month = parseInt(monthSelect.value, 10);
         const year = parseInt(yearSelect.value, 10);
+        if (updateHistory && !options.skipHistory) {
+          writeViewHistory({ type: "browse-date", month, year });
+        }
 
         const group = games
           .filter(g => g.month === month && g.year === year)
@@ -1346,7 +1540,7 @@
         group.forEach(addGameRow);
       }
 
-      goBtn.addEventListener("click", renderList);
+      goBtn.addEventListener("click", () => renderList());
 
       card.appendChild(monthSelect);
       card.appendChild(yearSelect);
@@ -1354,14 +1548,20 @@
       card.appendChild(listWrap);
 
       resultsEl.appendChild(card);
+      if (options.showList) {
+        renderList({ updateHistory: false });
+      }
       scrollResultViewToTop();
     }
 
-    function renderBrowseByConsole() {
+    function renderBrowseByConsole(options = {}) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
       resultsEl.innerHTML = "";
+      if (!options.skipHistory) {
+        writeViewHistory({ type: "browse-console" });
+      }
 
       if (!isLoaded) {
         statusEl.textContent = "Still loading data. Try again in a moment.";
@@ -1397,6 +1597,9 @@
         opt.textContent = c;
         consoleSelect.appendChild(opt);
       });
+      if (options.console) {
+        consoleSelect.value = options.console;
+      }
 
       const goBtn = document.createElement("button");
       goBtn.type = "button";
@@ -1427,9 +1630,12 @@
         list.appendChild(li);
       }
 
-      function renderList() {
+      function renderList({ updateHistory = true } = {}) {
         list.innerHTML = "";
         const selected = consoleSelect.value;
+        if (updateHistory && !options.skipHistory) {
+          writeViewHistory({ type: "browse-console", console: selected });
+        }
 
         const group = games
           .filter(g => (g.console || "").trim() === selected)
@@ -1451,13 +1657,16 @@
         group.forEach(addGameRow);
       }
 
-      goBtn.addEventListener("click", renderList);
+      goBtn.addEventListener("click", () => renderList());
 
       card.appendChild(consoleSelect);
       card.appendChild(goBtn);
       card.appendChild(listWrap);
 
       resultsEl.appendChild(card);
+      if (options.showList) {
+        renderList({ updateHistory: false });
+      }
       scrollResultViewToTop();
     }
 
@@ -1619,11 +1828,14 @@
       return card;
     }
 
-    function renderBirthdayList() {
+    function renderBirthdayList(options = {}) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
       setLandingChromeVisible(false);
       resultsEl.innerHTML = "";
+      if (!options.skipHistory) {
+        writeViewHistory({ type: "birthday" });
+      }
 
       if (!isLoaded) {
         statusEl.textContent = "Still loading data. Try again in a moment.";
@@ -1652,6 +1864,9 @@
       dateInput.required = true;
       dateInput.setAttribute("aria-label", "Birth date");
       dateInput.min = "1970-01-01";
+      if (options.date) {
+        dateInput.value = options.date;
+      }
 
       const goBtn = document.createElement("button");
       goBtn.type = "submit";
@@ -1664,7 +1879,7 @@
       const timelineWrap = document.createElement("div");
       timelineWrap.className = "birthday-timeline-wrap";
 
-      function renderTimeline() {
+      function renderTimeline({ updateHistory = true } = {}) {
         const birthday = parseBirthdayDate(dateInput.value);
         if (!birthday) {
           timelineWrap.innerHTML = "";
@@ -1685,13 +1900,17 @@
           : `No archive matches found for ${formatBirthdayLabel(birthday.day, birthday.month)} from ${birthday.year} onward.`;
         timelineWrap.appendChild(summary);
 
+        statusEl.textContent = `Birthday List for ${formatBirthdayLabel(birthday.day, birthday.month)}.`;
+        if (updateHistory && !options.skipHistory) {
+          writeViewHistory({ type: "birthday", date: dateInput.value });
+        }
+
         if (!rows.length) return;
 
         const timeline = document.createElement("div");
         timeline.className = "birthday-timeline";
         rows.forEach((row) => timeline.appendChild(createBirthdayTimelineCard(row)));
         timelineWrap.appendChild(timeline);
-        statusEl.textContent = `Birthday List for ${formatBirthdayLabel(birthday.day, birthday.month)}.`;
       }
 
       form.addEventListener("submit", (event) => {
@@ -1704,8 +1923,13 @@
       card.appendChild(form);
       card.appendChild(timelineWrap);
       resultsEl.appendChild(card);
+      if (options.showTimeline) {
+        renderTimeline({ updateHistory: false });
+      }
       scrollResultViewToTop();
-      dateInput.focus();
+      if (options.focusInput !== false) {
+        dateInput.focus();
+      }
     }
 
     async function loadDataIntoApp() {
@@ -1749,13 +1973,26 @@
           statusEl.textContent =
             `Showing shared Retro Weekend for ${sharedState.game.title}` +
             (sharedState.game.console ? ` on ${sharedState.game.console}` : "");
+          window.history.replaceState(
+            { [APP_HISTORY_KEY]: true, view: getGameHistoryState(sharedState.game) },
+            "",
+            window.location.href
+          );
           showSpecificGame(sharedState.game, {
             populateInput: true,
             initialSelections: sharedState.selections,
-            includedCategories: sharedState.includedCategories
+            includedCategories: sharedState.includedCategories,
+            skipHistory: true
           });
         } else {
-          renderOnThisMonth();
+          const hashState = parseViewStateFromHash();
+          if (hashState) {
+            window.history.replaceState({ [APP_HISTORY_KEY]: true, view: hashState }, "", window.location.href);
+            restoreHistoryView(hashState);
+          } else {
+            writeViewHistory({ type: "home" }, { replace: true });
+            renderOnThisMonth();
+          }
         }
       } catch (err) {
         console.error("loadAllData error:", err);
@@ -3024,7 +3261,11 @@
       function syncCurrentShareUrl() {
         if (!window.location.search) return;
 
-        window.history.replaceState({}, "", getShareableUrl(game, currentSelections, includedCategories));
+        window.history.replaceState(
+          { [APP_HISTORY_KEY]: true, view: getGameHistoryState(game) },
+          "",
+          getShareableUrl(game, currentSelections, includedCategories)
+        );
       }
 
       async function copyShareLink() {
@@ -3194,6 +3435,13 @@
       clearShareModals();
       resultsEl.innerHTML = "";
       const sharedGameKey = options.game ? getGameKey(options.game) : matches.length === 1 ? getGameKey(matches[0]) : "";
+      if (!options.skipHistory) {
+        if (matches.length === 1) {
+          writeViewHistory(getGameHistoryState(matches[0]));
+        } else {
+          writeViewHistory({ type: "search", query });
+        }
+      }
 
       if (!matches.length) {
         const div = document.createElement("div");
@@ -3338,11 +3586,14 @@ getCoverUrlForGame(game).then((url) => {
       scrollResultViewToTop();
     }
 
-    function resetApp() {
+    function resetApp(options = {}) {
       const statusEl = document.getElementById("status");
       const resultsEl = document.getElementById("results");
 
       clearShareableUrl();
+      if (!options.skipHistory) {
+        writeViewHistory({ type: "home" });
+      }
       gameInput.value = "";
       resultsGameInput.value = "";
       clearSuggestions();
@@ -3357,7 +3608,9 @@ getCoverUrlForGame(game).then((url) => {
         statusEl.textContent = "Loading data from Google Sheets...";
       }
 
-      gameInput.focus();
+      if (options.focusInput !== false) {
+        gameInput.focus();
+      }
     }
 
     document.getElementById("home-button").addEventListener("click", resetApp);
@@ -3396,6 +3649,15 @@ getCoverUrlForGame(game).then((url) => {
     window.addEventListener("load", () => {
       loadDataIntoApp();
       document.getElementById("game-input").focus();
+    });
+
+    window.addEventListener("popstate", (event) => {
+      const state = event.state;
+      const viewState = state && state[APP_HISTORY_KEY]
+        ? state.view
+        : parseViewStateFromHash();
+
+      restoreHistoryView(viewState || { type: "home" });
     });
 
     gameInput.addEventListener("keydown", (e) => {

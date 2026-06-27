@@ -22,7 +22,7 @@ Latest pushed commit at the time of this handoff:
 
 Current local git state:
 
-Clean after this handoff update is committed. If the handoff-only commit has not been pushed, the local branch may be one commit ahead of GitHub.
+Local branch may be ahead of GitHub with handoff/navigation commits if they have not been pushed yet.
 
 ## Current Local Server
 
@@ -158,6 +158,22 @@ Result views should scroll to the top when opened from searches, browse selectio
 
 This uses the shared `scrollResultViewToTop()` helper.
 
+### Browser Back / Forward Navigation
+
+The app now writes lightweight browser-history entries for major in-site views so the phone/browser Back button stays inside Game Rewind before leaving the site.
+
+Covered views:
+
+- Home.
+- Search results and multiple-console chooser screens.
+- Individual game result pages.
+- Console launch pages.
+- Browse by date, including selected month/year result lists.
+- Browse by console, including selected console result lists.
+- Birthday List, including built timelines.
+
+Normal in-app history uses hash markers such as `#view=browse-date&month=9&year=1986`. Shareable Retro Weekend URLs still use their existing query-string format and should continue to work.
+
 ## Existing Features To Preserve
 
 Keep these earlier features intact:
@@ -178,6 +194,14 @@ Recent checks included:
 
 - `node --check app.js`
 - Local browser checks on `http://127.0.0.1:8097/index.html`
+- Browser Back checks on mobile-sized and desktop-sized viewports:
+  - Browse by Date list -> game -> Back returns to the selected date list.
+  - Browse by Date selected list -> Back returns to base Browse by Date.
+  - Birthday List timeline -> game -> Back returns to the built timeline.
+  - Browse by Console list -> game -> Back returns to the selected console list.
+  - Search result -> Back returns to Home.
+  - Console launch result -> Back returns to Home.
+  - Direct loading `#view=browse-date&month=9&year=1986` restores the selected list.
 - Desktop share modal:
   - HTML preview is used.
   - Button says `Download PNG`.
