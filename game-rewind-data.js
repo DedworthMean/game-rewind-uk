@@ -126,12 +126,16 @@
   }
 
   function parseCinema(rows) {
+    const linkKeys = ["Link", "URL", "Url", "url"];
+
     return rows
       .map((row) => {
         const { month, year } = parseMonthYear(row["UK Release Date (by Month)"]);
+        const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
         return {
           title: (row["Title"] || "").trim(),
           imageUrl: String(row["Image"] || "").trim(),
+          url: String(linkRaw || "").trim(),
           month,
           year
         };
@@ -149,16 +153,19 @@
       "Release Date"
     ];
     const titleKeys = ["Title", "Film", "Movie", "Name", "Event"];
+    const linkKeys = ["Link", "URL", "Url", "url"];
 
     return rows
       .map((row) => {
         const monthRaw = monthKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
         const titleRaw = titleKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
+        const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
         const { month, year } = parseMonthYear(monthRaw);
 
         return {
           title: String(titleRaw || "").trim(),
           imageUrl: String(row["Image"] || "").trim(),
+          url: String(linkRaw || "").trim(),
           month,
           year
         };
