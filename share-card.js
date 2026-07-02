@@ -490,6 +490,11 @@
           try {
             if (isSingleItem(item)) {
               ctx.save();
+              ctx.beginPath();
+              ctx.rect(imageX, imageY, imageWidth, insetImageHeight);
+              ctx.clip();
+
+              ctx.save();
               ctx.filter = "blur(16px) saturate(1.25)";
               drawCanvasImageCover(ctx, image, imageX - 12, imageY - 12, imageWidth + 24, insetImageHeight + 24);
               ctx.restore();
@@ -510,6 +515,7 @@
                 zoomWidth,
                 zoomHeight
               );
+              ctx.restore();
             } else {
               drawCanvasImageContain(ctx, image, imageX, imageY, imageWidth, insetImageHeight);
             }
