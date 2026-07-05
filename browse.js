@@ -222,6 +222,10 @@
           .sort((a, b) =>
             (a.title || "").trim().localeCompare((b.title || "").trim(), undefined, { sensitivity: "base" })
           );
+        const selectedConsoleKey = context.normalizeConsoleText(selected);
+        const launchMatch = (state.consoleLaunches || []).find((launch) =>
+          context.normalizeConsoleText(launch.console) === selectedConsoleKey
+        );
 
         if (!group.length) {
           const empty = document.createElement("div");
@@ -233,6 +237,9 @@
         }
 
         listWrap.innerHTML = "";
+        if (launchMatch) {
+          listWrap.appendChild(context.createConsoleLaunchPromo(launchMatch));
+        }
         listWrap.appendChild(list);
         group.forEach(addGameRow);
       }

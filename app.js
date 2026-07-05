@@ -932,12 +932,14 @@
 
     const browseFeature = window.GameRewindBrowse.createBrowseFeature({
       getState: () => ({
-        games
+        games,
+        consoleLaunches
       }),
       createConsoleLaunchPromo,
       getConsoleLaunchesForMonth,
       isLoaded: () => isLoaded,
       monthNameFromNumber,
+      normalizeConsoleText,
       scrollResultViewToTop,
       setLandingChromeVisible,
       showSpecificGame,
