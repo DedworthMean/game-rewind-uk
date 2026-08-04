@@ -18,11 +18,24 @@ Branch:
 
 Latest pushed commit at the time of this handoff:
 
-`662c282 Use rendered share preview on mobile`
+`91c65bb Use new music sheet cover art format`
 
 Current local git state:
 
-Local branch may be ahead of GitHub with handoff/navigation commits if they have not been pushed yet.
+Local branch should be clean apart from intentional handoff edits if this file has just been updated.
+
+## August 2026 Reliability And Security Pass
+
+- Sheet and proxy artwork URLs are accepted only when they are bounded HTTP(S) URLs.
+- IGDB cover lookups now bound title/console inputs, validate the year, time out, deduplicate concurrent requests, and allow retries after failures.
+- Sheet requests time out and retry once; optional feeds degrade independently while the required Games feed fails clearly when it has no usable rows.
+- Search suggestions are relevance-ranked, deduplicated, capped at 12, and keyboard accessible.
+- URL-restored application state and external links are validated before use.
+- Core regression coverage lives in `tests/core.test.js` and runs with `node --test tests/core.test.js`.
+
+The deployed IGDB Worker currently accepts `POST` even though its CORS header advertises only `GET,OPTIONS`. Its source was not available in this repository, so the Worker still needs a server-side method check plus title/console/year bounds in its own deployment. The browser-side caller now supplies bounded inputs, but that does not replace Worker-side enforcement.
+
+The live data audit found 77 undated SNES game rows, seven undated cartoon rows, one dated rental row without a title, two game duplicate candidates, 23 cartoon duplicate candidates, and one WWE image cell containing a TMDB page URL rather than an image URL. Duplicate candidates were not removed because repeat releases/broadcasts may be intentional.
 
 ## Current Local Server
 
@@ -79,6 +92,8 @@ The launch window means launch month plus the following month. This wider window
 
 If someone browses to a month/year that has a console launch, the console launch promo appears at the top of the date result list, above ordinary game releases.
 
+If someone uses Browse by Console and selects a console with a matching launch row, the same console launch promo appears above that console's game list. This uses console alias matching, so `NES` can match `Nintendo Entertainment System`.
+
 Console launch image files live in:
 
 `C:\Users\deana\OneDrive\Documents\App\Game Rewind\game-rewind-uk\console`
@@ -127,14 +142,27 @@ This applies to:
 
 This was done so album chart content can be added later without the visible wording feeling too narrow.
 
-### Music/Single YouTube Logic
+### Music/Single Sheet Format And Artwork
 
-Music sheet rows now read a `Link` column.
+The production `Music` Google Sheet tab now uses the newer split-column format:
+
+- `Month`: date text, for example `September 1986`.
+- `Existing Title`: display title used by the app, for example `Communards - Don't Leave Me This Way`.
+- `Artist`: artist name used during music metadata cleanup.
+- `Title`: song title used during music metadata cleanup.
+- `Link`: YouTube/direct link used as the click target.
+- `Image`: manual artwork override.
+- `Cover Art URL`: MusicBrainz / Cover Art Archive artwork URL.
+
+The old `Music` tab was renamed to a backup sheet, and the enriched former `Copy of Music` tab was renamed to `Music`.
+
+The app still reads the production `Music` tab. `game-rewind-data.js` parses both the old and new music shapes, but the live sheet should use the new format.
 
 Rules:
 
 - If an `Image` value exists, it takes priority for artwork.
-- If `Image` is blank and `Link` is a YouTube URL, the app derives the artwork from the YouTube video thumbnail.
+- If `Image` is blank and `Cover Art URL` exists, the app uses that MusicBrainz / Cover Art Archive artwork.
+- If both are blank and `Link` is a YouTube URL, the app derives the artwork from the YouTube video thumbnail.
 - If `Link` exists, clicking the result opens that direct link instead of the generic YouTube search.
 - If no direct link exists, the old YouTube search behavior is used.
 
@@ -171,6 +199,7 @@ Single artwork behavior:
 
 - YouTube thumbnails are horizontal, while result cards are portrait.
 - Single tiles now use a blurred background fill with a foreground image, keeping the main image at the intended scale and avoiding harsh black bars.
+- Mobile share-card JPG exports clip the zoomed Single foreground image to its tile, matching the desktop HTML preview and preventing the image from spilling outside the boundary.
 
 VHS template note:
 

@@ -416,6 +416,8 @@
       findConsoleLaunchMatches,
       findPrimaryConsoleLaunchMatch,
       getConsoleLaunchesForMonth,
+      getLaunchWindowGames,
+      isInConsoleLaunchWindow,
       normalizeConsoleText,
       renderConsoleLaunchResult
     };

@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260608-music-youtube-thumbs" />
+  <link rel="stylesheet" href="styles.css?v=20260804-keyboard-focus-fixes" />
 </head>
 <body>
   <div class="page-shell">
@@ -57,7 +57,7 @@
         <form id="search-form">
           <div class="search-wrapper">
             <label for="game-input" class="sr-only">Game title</label>
-            <input type="text" id="game-input" placeholder="e.g. Super Mario World" autocomplete="off" required aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions" />
+            <input type="text" id="game-input" placeholder="e.g. Super Mario World" autocomplete="off" required role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="suggestions" />
             <div id="suggestions" class="suggestions" role="listbox" aria-label="Game suggestions"></div>
           </div>
           <button type="submit" id="search-button">Search</button>
@@ -123,7 +123,7 @@
         <form id="results-search-form" class="nav-search is-hidden">
           <div class="nav-search-field">
             <label for="results-game-input" class="sr-only">Search another game</label>
-            <input type="text" id="results-game-input" class="nav-search-input" placeholder="Search another game" autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls="results-suggestions" />
+            <input type="text" id="results-game-input" class="nav-search-input" placeholder="Search another game" autocomplete="off" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="results-suggestions" />
             <button type="submit" id="results-search-button" class="nav-search-button">Search</button>
             <div id="results-suggestions" class="suggestions" role="listbox" aria-label="Game suggestions"></div>
           </div>
@@ -135,7 +135,8 @@
     </main>
   </div>
 
-  <script src="game-rewind-data.js?v=20260804-music-cover-art"></script>
+  <script src="game-rewind-data.js?v=20260804-url-hardening"></script>
+  <script src="game-rewind-url.js?v=20260804-url-proofing"></script>
   <script src="share-card-backgrounds.js?v=20260606-game-box-rescale"></script>
   <script src="share-card-templates.js?v=20260627-js-split"></script>
   <script src="share-card.js?v=20260702-single-art-clip"></script>
@@ -143,6 +144,6 @@
   <script src="browse.js?v=20260705-console-launch-promo"></script>
   <script src="birthday.js?v=20260627-js-split"></script>
   <script src="render-results.js?v=20260627-js-split"></script>
-  <script src="app.js?v=20260705-console-launch-promo"></script>
+  <script src="app.js?v=20260804-url-proofing"></script>
 </body>
 </html>

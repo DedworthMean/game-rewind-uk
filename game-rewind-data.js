@@ -12,7 +12,23 @@
   const RETRO_WEEKEND_GID = "435750815";
 
   const IGDB_PROXY = "https://igdb-cover-proxy.deanagacy.workers.dev";
+  const DEFAULT_SUGGESTION_LIMIT = 12;
+  const COVER_REQUEST_TIMEOUT_MS = 8000;
+  const SHEET_REQUEST_TIMEOUT_MS = 10000;
+  const SHEET_REQUEST_ATTEMPTS = 2;
   const coverCache = new Map();
+
+  function getSafeHttpUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw || raw.length > 2048) return "";
+
+    try {
+      const url = new URL(raw);
+      return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+    } catch (err) {
+      return "";
+    }
+  }
 
   function parseMonthYear(raw) {
     if (!raw) return { month: null, year: null };
@@ -51,16 +67,35 @@
     return (!n || n < 1 || n > 12) ? "Unknown month" : months[n - 1];
   }
 
-  async function fetchJsonArray(url) {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch: " + res.status + " " + res.statusText);
+  async function fetchJsonArray(url, options = {}) {
+    const timeoutMs = options.timeoutMs || SHEET_REQUEST_TIMEOUT_MS;
+    const attempts = options.attempts || SHEET_REQUEST_ATTEMPTS;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) {
+          throw new Error("Failed to fetch: " + res.status + " " + res.statusText);
+        }
+
+        const rows = await res.json();
+        if (!Array.isArray(rows)) throw new Error("Sheet response was not an array");
+        return rows;
+      } catch (err) {
+        lastError = err;
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
     }
 
-    return await res.json();
+    throw lastError || new Error("Sheet request failed");
   }
 
-  async function fetchGoogleVisualizationRows(sheetId, gid) {
+  async function fetchGoogleVisualizationRowsOnce(sheetId, gid) {
     const callbackName = `gameRewindSheetCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackName}&gid=${gid}`;
 
@@ -110,6 +145,20 @@
     });
   }
 
+  async function fetchGoogleVisualizationRows(sheetId, gid) {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= SHEET_REQUEST_ATTEMPTS; attempt += 1) {
+      try {
+        return await fetchGoogleVisualizationRowsOnce(sheetId, gid);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    throw lastError || new Error("Visualization sheet request failed");
+  }
+
   function parseGames(rows) {
     return rows
       .map((row) => {
@@ -119,10 +168,16 @@
           console: (row["Console"] || "").trim(),
           month,
           year,
-          imageUrl: (row["Image URL"] || "").trim()
+          imageUrl: getSafeHttpUrl(row["Image URL"])
         };
       })
       .filter((game) => game.title && game.month && game.year);
+  }
+
+  function assertGamesAvailable(games) {
+    if (!Array.isArray(games) || !games.length) {
+      throw new Error("Games sheet returned no valid rows");
+    }
   }
 
   function parseCinema(rows) {
@@ -134,8 +189,8 @@
         const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
         return {
           title: (row["Title"] || "").trim(),
-          imageUrl: String(row["Image"] || "").trim(),
-          url: String(linkRaw || "").trim(),
+          imageUrl: getSafeHttpUrl(row["Image"]),
+          url: getSafeHttpUrl(linkRaw),
           month,
           year
         };
@@ -164,8 +219,8 @@
 
         return {
           title: String(titleRaw || "").trim(),
-          imageUrl: String(row["Image"] || "").trim(),
-          url: String(linkRaw || "").trim(),
+          imageUrl: getSafeHttpUrl(row["Image"]),
+          url: getSafeHttpUrl(linkRaw),
           month,
           year
         };
@@ -211,9 +266,9 @@
       .map((row) => {
         const { month, year } = parseMonthYear(row["Month"]);
         const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
-        const url = String(linkRaw || "").trim();
-        const imageUrl = String(row["Image"] || "").trim() ||
-          String(row["Cover Art URL"] || "").trim() ||
+        const url = getSafeHttpUrl(linkRaw);
+        const imageUrl = getSafeHttpUrl(row["Image"]) ||
+          getSafeHttpUrl(row["Cover Art URL"]) ||
           getYouTubeThumbnailUrl(url);
         const existingTitle = String(row["Existing Title"] || "").trim();
         const artist = String(row["Artist"] || "").trim();
@@ -252,10 +307,10 @@
 
         return {
           title: String(titleRaw || "").trim(),
-          imageUrl: String(row["Image Link"] || "").trim(),
+          imageUrl: getSafeHttpUrl(row["Image Link"]),
           month,
           year,
-          url: String(linkRaw || "").trim()
+          url: getSafeHttpUrl(linkRaw)
         };
       })
       .filter((entry) => entry.title && entry.month && entry.year);
@@ -271,10 +326,10 @@
 
         return {
           title: eventRaw.trim(),
-          imageUrl: String(row["Image"] || "").trim(),
+          imageUrl: getSafeHttpUrl(row["Image"]),
           month,
           year,
-          url: String(urlRaw).trim()
+          url: getSafeHttpUrl(urlRaw)
         };
       })
       .filter((entry) => entry.title && entry.month && entry.year);
@@ -284,8 +339,8 @@
     return rows
       .map((row) => {
         const { month, year } = parseMonthYear(row["UK Date"]);
-        const musicLink = String(row["Music Link"] || "").trim();
-        const musicImageRaw = String(row["Music Image"] || row["Music Image Link"] || row["Music Artwork"] || "").trim();
+        const musicLink = getSafeHttpUrl(row["Music Link"]);
+        const musicImageRaw = getSafeHttpUrl(row["Music Image"] || row["Music Image Link"] || row["Music Artwork"]);
         const musicUrl = isYouTubeUrl(musicLink) ? musicLink : "";
         const musicImageUrl = musicImageRaw || (musicUrl ? getYouTubeThumbnailUrl(musicUrl) : musicLink);
 
@@ -293,20 +348,20 @@
           month,
           year,
           cinemaTitle: String(row["Cinema"] || "").trim(),
-          cinemaImageUrl: String(row["Cinema Link"] || "").trim(),
+          cinemaImageUrl: getSafeHttpUrl(row["Cinema Link"]),
           musicTitle: String(row["Music"] || "").trim(),
           musicImageUrl,
           musicUrl,
           wweTitle: String(row["WWE"] || row["Wrestling"] || "").trim(),
-          wweImageUrl: String(row["WWE Link"] || row["Wrestling Link"] || "").trim(),
+          wweImageUrl: getSafeHttpUrl(row["WWE Link"] || row["Wrestling Link"]),
           rentalTitle: String(row["Rental"] || "").trim(),
-          rentalImageUrl: String(row["Rental Link"] || "").trim(),
+          rentalImageUrl: getSafeHttpUrl(row["Rental Link"]),
           cartoonsTitle: String(row["Cartoons"] || "").trim(),
-          cartoonsImageUrl: String(row["Cartoons Link"] || "").trim(),
+          cartoonsImageUrl: getSafeHttpUrl(row["Cartoons Link"]),
           tvTitle: String(row["TV"] || "").trim(),
-          tvImageUrl: String(row["TV Link"] || "").trim(),
+          tvImageUrl: getSafeHttpUrl(row["TV Link"]),
           magazineTitle: String(row["Magazine"] || "").trim(),
-          magazineImageUrl: String(row["Magazine Link"] || "").trim()
+          magazineImageUrl: getSafeHttpUrl(row["Magazine Link"])
         };
       })
       .filter((entry) => entry.month && entry.year);
@@ -333,7 +388,7 @@
           console: consoleName,
           headline: String(headlineRaw || "").trim() || (consoleName ? `${consoleName} launches in the UK` : ""),
           description: String(descriptionRaw || "").trim(),
-          imageUrl: String(imageRaw || "").trim(),
+          imageUrl: getSafeHttpUrl(imageRaw),
           month,
           year
         };
@@ -400,9 +455,11 @@
       .concat(exactNormalizedMatches, partialNormalizedMatches, tokenMatches);
   }
 
-  function getSuggestedGameTitles(games, query) {
+  function getSuggestedGameTitles(games, query, limit = DEFAULT_SUGGESTION_LIMIT) {
     const normalizedQuery = normalizeGameSearchText(query);
     if (!normalizedQuery) return [];
+
+    const safeLimit = Math.max(1, Number(limit) || DEFAULT_SUGGESTION_LIMIT);
 
     const queryTokens = normalizedQuery.split(" ");
     const exactNormalizedTitles = [];
@@ -414,56 +471,82 @@
     games.forEach((game) => {
       const title = String(game.title || "").trim();
       const normalizedTitle = normalizeGameSearchText(title);
-      if (!title || !normalizedTitle || seenTitles.has(title)) return;
+      if (!title || !normalizedTitle || seenTitles.has(normalizedTitle)) return;
 
       if (normalizedTitle === normalizedQuery) {
         exactNormalizedTitles.push(title);
-        seenTitles.add(title);
+        seenTitles.add(normalizedTitle);
         return;
       }
 
       if (normalizedTitle.startsWith(normalizedQuery)) {
         startsWithTitles.push(title);
-        seenTitles.add(title);
+        seenTitles.add(normalizedTitle);
         return;
       }
 
       if (normalizedTitle.includes(normalizedQuery)) {
         includesTitles.push(title);
-        seenTitles.add(title);
+        seenTitles.add(normalizedTitle);
         return;
       }
 
       if (queryTokens.every((token) => normalizedTitle.includes(token))) {
         tokenTitles.push(title);
-        seenTitles.add(title);
+        seenTitles.add(normalizedTitle);
       }
     });
 
-    return exactNormalizedTitles
-      .concat(startsWithTitles, includesTitles, tokenTitles)
-      .sort((a, b) => a.localeCompare(b));
+    const sortTitles = (titles) => titles.sort((a, b) => a.localeCompare(b));
+    return sortTitles(exactNormalizedTitles)
+      .concat(
+        sortTitles(startsWithTitles),
+        sortTitles(includesTitles),
+        sortTitles(tokenTitles)
+      )
+      .slice(0, safeLimit);
   }
 
   async function getCoverUrlForGame(game) {
     if (game.imageUrl) return game.imageUrl;
 
-    const key = game.title;
+    const title = String(game.title || "").trim().slice(0, 160);
+    const consoleName = String(game.console || "").trim().slice(0, 80);
+    const year = Number.isInteger(Number(game.year)) && Number(game.year) >= 1970 && Number(game.year) <= 2100
+      ? Number(game.year)
+      : null;
+    if (!title) return null;
+
+    const key = [title, consoleName, year]
+      .map((value) => normalizeGameSearchText(value))
+      .join("|");
     if (coverCache.has(key)) return coverCache.get(key);
 
-    try {
-      const res = await fetch(`${IGDB_PROXY}/?title=${encodeURIComponent(game.title)}`);
-      if (!res.ok) throw new Error("Proxy error");
+    const request = (async () => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), COVER_REQUEST_TIMEOUT_MS);
 
-      const data = await res.json();
-      const url = data.coverUrl || null;
-      coverCache.set(key, url);
-      return url;
-    } catch (err) {
-      console.warn("IGDB cover lookup failed:", err);
-      coverCache.set(key, null);
-      return null;
-    }
+      try {
+        const params = new URLSearchParams({ title });
+        if (consoleName) params.set("console", consoleName);
+        if (year) params.set("year", String(year));
+
+        const res = await fetch(`${IGDB_PROXY}/?${params.toString()}`, { signal: controller.signal });
+        if (!res.ok) throw new Error(`Proxy error: ${res.status}`);
+
+        const data = await res.json();
+        return getSafeHttpUrl(data.coverUrl) || null;
+      } catch (err) {
+        coverCache.delete(key);
+        console.warn("IGDB cover lookup failed:", err);
+        return null;
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    })();
+
+    coverCache.set(key, request);
+    return request;
   }
 
   async function loadOptionalSheet(name, loader) {
@@ -498,6 +581,8 @@
     }
 
     const games = parseGames(gamesResult.rows);
+    assertGamesAvailable(games);
+
     const cinema = parseCinema(cinemaResult.rows);
     const music = parseMusic(musicResult.rows);
     const wwe = parseWwe(wweResult.rows);
@@ -537,10 +622,13 @@
 
   window.GameRewindData = {
     SHEET_URLS,
+    assertGamesAvailable,
     filterEntriesByMonthYear,
+    fetchJsonArray,
     findGameMatches,
     getSuggestedGameTitles,
     getCoverUrlForGame,
+    getSafeHttpUrl,
     getUniqueGameTitles,
     loadAllData,
     monthNameFromNumber,
