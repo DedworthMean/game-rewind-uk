@@ -12,13 +12,11 @@ Remote:
 
 `https://github.com/DedworthMean/game-rewind-uk.git`
 
-Branch:
+Reliability/security branch:
 
-`main`
+`agent/reliability-security-proofing`
 
-Latest pushed commit at the time of this handoff:
-
-`91c65bb Use new music sheet cover art format`
+The main site hardening is in `0fa82e0`; the versioned Worker and its tests were added in `5527abc`.
 
 Current local git state:
 
@@ -33,7 +31,7 @@ Local branch should be clean apart from intentional handoff edits if this file h
 - URL-restored application state and external links are validated before use.
 - Core regression coverage lives in `tests/core.test.js` and `tests/worker.test.js`; run both with `node --test tests/core.test.js tests/worker.test.js`.
 
-The IGDB Worker source is now versioned in `cloudflare-worker/worker.js`, with its Wrangler configuration alongside it. The hardened version enforces `GET`/`OPTIONS`, bounds and normalises titles, safely escapes the IGDB query, canonicalises cache keys, validates upstream responses, applies upstream timeouts, and avoids returning upstream error details. `tests/worker.test.js` covers the important request and response cases. At the time of this handoff, this version passed a Wrangler dry run but was awaiting Cloudflare OAuth authorisation and production deployment; deployed version `5a5087c0` still accepts `POST` until that deployment is completed.
+The IGDB Worker source is now versioned in `cloudflare-worker/worker.js`, with its Wrangler configuration alongside it. The hardened version enforces `GET`/`OPTIONS`, bounds and normalises titles, safely escapes the IGDB query, canonicalises cache keys, validates upstream responses, applies upstream timeouts, and avoids returning upstream error details. `tests/worker.test.js` covers the important request and response cases. It was deployed to production as Cloudflare version `918dc53a-18c7-49dd-90bf-459ca06e6002`. Live checks confirmed `POST` returns 405, `OPTIONS` returns 204, missing and oversized titles return 400, and a normal `Doom` lookup returns 200 with a valid IGDB cover URL. Preview URLs were disabled again in the dashboard after deployment, and `wrangler.jsonc` now records `preview_urls: false` for future deploys.
 
 The live data audit found 77 undated SNES game rows, seven undated cartoon rows, one dated rental row without a title, two game duplicate candidates, 23 cartoon duplicate candidates, and one WWE image cell containing a TMDB page URL rather than an image URL. Duplicate candidates were not removed because repeat releases/broadcasts may be intentional.
 
