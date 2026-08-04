@@ -212,10 +212,16 @@
         const { month, year } = parseMonthYear(row["Month"]);
         const linkRaw = linkKeys.map((key) => row[key]).find((value) => value !== undefined) || "";
         const url = String(linkRaw || "").trim();
-        const imageUrl = String(row["Image"] || "").trim() || getYouTubeThumbnailUrl(url);
+        const imageUrl = String(row["Image"] || "").trim() ||
+          String(row["Cover Art URL"] || "").trim() ||
+          getYouTubeThumbnailUrl(url);
+        const existingTitle = String(row["Existing Title"] || "").trim();
+        const artist = String(row["Artist"] || "").trim();
+        const title = String(row["Title"] || "").trim();
+        const displayTitle = existingTitle || (artist && title ? `${artist} - ${title}` : title);
 
         return {
-          title: (row["Title"] || "").trim(),
+          title: displayTitle,
           imageUrl,
           url,
           month,
