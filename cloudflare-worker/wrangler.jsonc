@@ -4,6 +4,16 @@
   "compatibility_date": "2026-08-04",
   "preview_urls": false,
   "keep_vars": true,
+  "ratelimits": [
+    {
+      "name": "COVER_RATE_LIMITER",
+      "namespace_id": "84173",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
