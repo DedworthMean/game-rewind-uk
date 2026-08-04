@@ -8,6 +8,12 @@
       monthNameFromNumber,
       normalizeGameSearchText
     } = window.GameRewindData;
+    const {
+      getSafeExternalUrl,
+      isSafeSharePayload,
+      isValidArchiveMonthYear,
+      sanitizeViewState
+    } = window.GameRewindUrl;
 
     let games = [];
     let cinema = [];
@@ -24,6 +30,15 @@
     let isRestoringHistory = false;
     let uniqueGameTitles = [];
     let renderBirthdayList = () => {};
+    let dataAvailability = {
+      cinema: true,
+      music: true,
+      wwe: true,
+      rental: true,
+      cartoons: true,
+      retroWeekend: true,
+      console: true
+    };
     const APP_HISTORY_KEY = "game-rewind-view";
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
     const MAX_SECTION_ITEMS = 20;
@@ -46,6 +61,8 @@
     function clearShareModals() {
       document.querySelectorAll(".share-card-modal").forEach((modal) => modal.remove());
       document.body.classList.remove("has-share-modal");
+      const pageShell = document.querySelector(".page-shell");
+      if (pageShell) pageShell.removeAttribute("inert");
     }
 
     function setImagePendingPlaceholder(element, label = "Archive") {
@@ -71,12 +88,16 @@
       const keyRental = filterEntriesByMonthYear(rental, month, year);
       const keyCartoons = filterEntriesByMonthYear(cartoons, month, year);
 
+      const emptyText = (key, normalText) => dataAvailability[key]
+        ? normalText
+        : "This section is temporarily unavailable. Try reloading the page shortly.";
+
       return [
         {
           key: "cinema",
           label: "Cinema",
           title: keyCinema.length ? `In cinemas (${keyCinema.length})` : "In cinemas",
-          emptyText: "No cinema data for this month.",
+          emptyText: emptyText("cinema", "No cinema data for this month."),
           items: keyCinema,
           linkMode: "imdb",
           enableToggle: true
@@ -85,7 +106,7 @@
           key: "rental",
           label: "Rental",
           title: keyRental.length ? `Available to rent (${keyRental.length})` : "Available to rent",
-          emptyText: "No rental data for this month.",
+          emptyText: emptyText("rental", "No rental data for this month."),
           items: keyRental,
           linkMode: "imdb",
           enableToggle: true
@@ -94,7 +115,7 @@
           key: "music",
           label: "Single",
           title: keyMusic.length ? `In the charts (${keyMusic.length})` : "IN THE CHARTS",
-          emptyText: "No music data for this month.",
+          emptyText: emptyText("music", "No music data for this month."),
           items: keyMusic,
           linkMode: "youtube",
           enableToggle: false
@@ -103,7 +124,7 @@
           key: "cartoons",
           label: "Kids TV",
           title: keyCartoons.length ? `KIDS TV (${keyCartoons.length})` : "KIDS TV",
-          emptyText: "No kids TV data for this month.",
+          emptyText: emptyText("cartoons", "No kids TV data for this month."),
           items: keyCartoons,
           linkMode: undefined,
           enableToggle: true
@@ -112,7 +133,7 @@
           key: "wwe",
           label: "Wrestling",
           title: keyWwe.length ? `Wrestling events (${keyWwe.length})` : "Wrestling events",
-          emptyText: "No wrestling events for this month.",
+          emptyText: emptyText("wwe", "No wrestling events for this month."),
           items: keyWwe,
           linkMode: undefined,
           enableToggle: false
@@ -375,6 +396,8 @@
     }
 
     function decodeSharePayload(value) {
+      if (!isSafeSharePayload(value)) return null;
+
       try {
         const padded = String(value || "").replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(String(value || "").length / 4) * 4, "=");
         const binary = atob(padded);
@@ -413,7 +436,7 @@
         expanded[key] = {
           title: selection.t,
           imageUrl: selection.i || "",
-          url: selection.u || "",
+          url: getSafeExternalUrl(selection.u) || "",
           linkMode: selection.l || ""
         };
       });
@@ -463,9 +486,10 @@
       const title = params.get("game");
       const month = Number(params.get("month"));
       const year = Number(params.get("year"));
-      if (!title || !month || !year) return null;
+      if (!title || title.length > 160 || !isValidArchiveMonthYear(month, year)) return null;
 
       const consoleName = params.get("console") || "";
+      if (consoleName.length > 80 || window.location.search.length > 8000) return null;
       const normalizedTitle = normalizeGameSearchText(title);
       const normalizedConsole = normalizeLookupText(consoleName);
       const game = games.find((candidate) =>
@@ -555,13 +579,13 @@
 
     function parseViewStateFromHash() {
       const rawHash = window.location.hash.replace(/^#/, "");
-      if (!rawHash) return null;
+      if (!rawHash || rawHash.length > 2048) return null;
 
       const params = new URLSearchParams(rawHash);
       const type = params.get("view");
       if (!type) return null;
 
-      return {
+      return sanitizeViewState({
         type,
         title: params.get("title") || "",
         console: params.get("console") || "",
@@ -569,7 +593,7 @@
         date: params.get("date") || "",
         month: Number(params.get("month")) || 0,
         year: Number(params.get("year")) || 0
-      };
+      });
     }
 
     function getHistoryUrl(viewState) {
@@ -609,6 +633,8 @@
 
     function restoreHistoryView(viewState) {
       if (!isLoaded) return;
+
+      viewState = sanitizeViewState(viewState) || { type: "home" };
 
       isRestoringHistory = true;
       clearSuggestions();
@@ -990,6 +1016,15 @@
         cartoons = data.cartoons;
         retroWeekend = data.retroWeekend;
         consoleLaunches = data.consoleLaunches;
+        dataAvailability = {
+          cinema: data.cinemaLoaded,
+          music: data.musicLoaded,
+          wwe: data.wweLoaded,
+          rental: data.rentalLoaded,
+          cartoons: data.cartoonsLoaded,
+          retroWeekend: data.retroWeekendLoaded,
+          console: data.consoleLoaded
+        };
         uniqueGameTitles = getUniqueGameTitles(games);
         isLoaded = true;
 
@@ -1048,6 +1083,31 @@
     const resultsGameInput = document.getElementById("results-game-input");
     const suggestionsEl = document.getElementById("suggestions");
     const resultsSuggestionsEl = document.getElementById("results-suggestions");
+    const activeSuggestionIndexes = { primary: -1, results: -1 };
+
+    function getSuggestionElements(source) {
+      const target = source === "results" ? resultsSuggestionsEl : suggestionsEl;
+      return Array.from(target.querySelectorAll("[role='option']"));
+    }
+
+    function setActiveSuggestion(source, nextIndex) {
+      const inputEl = source === "results" ? resultsGameInput : gameInput;
+      const items = getSuggestionElements(source);
+      if (!items.length) return;
+
+      const normalizedIndex = ((nextIndex % items.length) + items.length) % items.length;
+      activeSuggestionIndexes[source] = normalizedIndex;
+
+      items.forEach((item, index) => {
+        const isActive = index === normalizedIndex;
+        item.classList.toggle("is-active", isActive);
+        item.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+
+      const activeItem = items[normalizedIndex];
+      inputEl.setAttribute("aria-activedescendant", activeItem.id);
+      activeItem.scrollIntoView({ block: "nearest" });
+    }
 
     function setSuggestionExpanded(source, expanded) {
       const inputEl = source === "results" ? resultsGameInput : gameInput;
@@ -1075,6 +1135,13 @@
         target.style.display = "none";
       });
 
+      const sources = source ? [source] : ["primary", "results"];
+      sources.forEach((targetSource) => {
+        activeSuggestionIndexes[targetSource] = -1;
+        const inputEl = targetSource === "results" ? resultsGameInput : gameInput;
+        inputEl.removeAttribute("aria-activedescendant");
+      });
+
       if (source === "primary") {
         setSuggestionExpanded("primary", false);
       } else if (source === "results") {
@@ -1093,11 +1160,16 @@
       clearSuggestions(source === "results" ? "primary" : "results");
       targetSuggestionsEl.style.display = "block";
       setSuggestionExpanded(source, true);
-      list.forEach(title => {
+      activeSuggestionIndexes[source] = -1;
+      const inputEl = source === "results" ? resultsGameInput : gameInput;
+      inputEl.removeAttribute("aria-activedescendant");
+      list.forEach((title, index) => {
         const item = document.createElement("div");
         item.className = "suggestion-item";
+        item.id = `${source}-game-suggestion-${index}`;
         item.setAttribute("role", "option");
-        item.tabIndex = 0;
+        item.setAttribute("aria-selected", "false");
+        item.tabIndex = -1;
         item.textContent = title;
         const chooseSuggestion = () => {
           syncSearchInputs(title);
@@ -1105,14 +1177,39 @@
           handleExactTitleSelection(title);
         };
         item.addEventListener("mousedown", chooseSuggestion);
-        item.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            chooseSuggestion();
-          }
-        });
         targetSuggestionsEl.appendChild(item);
       });
+    }
+
+    function handleSuggestionKeydown(event, source) {
+      const items = getSuggestionElements(source);
+
+      if (event.key === "Escape" && items.length) {
+        event.preventDefault();
+        clearSuggestions(source);
+        return;
+      }
+
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        if (!items.length) return;
+        event.preventDefault();
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const currentIndex = activeSuggestionIndexes[source];
+        const nextIndex = currentIndex < 0
+          ? (direction > 0 ? 0 : items.length - 1)
+          : currentIndex + direction;
+        setActiveSuggestion(source, nextIndex);
+        return;
+      }
+
+      if (event.key === "Enter" && activeSuggestionIndexes[source] >= 0) {
+        const activeItem = items[activeSuggestionIndexes[source]];
+        if (!activeItem) return;
+        event.preventDefault();
+        syncSearchInputs(activeItem.textContent || "");
+        clearSuggestions();
+        handleExactTitleSelection(activeItem.textContent || "");
+      }
     }
 
     function getSuggestionTitles(query) {
@@ -1138,10 +1235,12 @@
     }
 
     gameInput.addEventListener("input", () => handleInputChange("primary"));
+    gameInput.addEventListener("keydown", (event) => handleSuggestionKeydown(event, "primary"));
     gameInput.addEventListener("blur", () => setTimeout(() => clearSuggestions("primary"), 150));
     resultsGameInput.addEventListener("input", () => {
       handleInputChange("results");
     });
+    resultsGameInput.addEventListener("keydown", (event) => handleSuggestionKeydown(event, "results"));
     resultsGameInput.addEventListener("blur", () => setTimeout(() => clearSuggestions("results"), 150));
 
     function handleSearch(event) {
@@ -1398,7 +1497,8 @@
     function getSectionItemDestination(item, linkMode) {
       if (!item || !item.title) return null;
       if (item.url) {
-        return item.url;
+        const safeUrl = getSafeExternalUrl(item.url);
+        if (safeUrl) return safeUrl;
       }
       if (linkMode === "imdb") {
         return `https://www.imdb.com/find?q=${encodeURIComponent(item.title)}`;
@@ -1428,7 +1528,7 @@
           normalizeLookupText(entry.title) === normalizeLookupText(item.title) &&
           entry.url
         );
-        return match?.url || null;
+        return getSafeExternalUrl(match?.url) || null;
       }
 
       if (item.label === "Kids TV") {
@@ -1438,7 +1538,7 @@
           normalizeLookupText(entry.title) === normalizeLookupText(item.title) &&
           entry.url
         );
-        return match?.url || null;
+        return getSafeExternalUrl(match?.url) || null;
       }
 
       return null;
@@ -1688,6 +1788,7 @@
       let shareCardCanvas = null;
       let selectedTemplateKey = SHARE_CARD_TEMPLATES[0].key;
       let sharePreviewRequestId = 0;
+      let shareModalReturnFocus = null;
 
       card.appendChild(kicker);
       titleRow.appendChild(title);
@@ -1712,6 +1813,12 @@
       function closeShareModal() {
         shareModal.classList.add("is-hidden");
         document.body.classList.remove("has-share-modal");
+        const pageShell = document.querySelector(".page-shell");
+        if (pageShell) pageShell.removeAttribute("inert");
+        if (shareModalReturnFocus && document.body.contains(shareModalReturnFocus)) {
+          shareModalReturnFocus.focus();
+        }
+        shareModalReturnFocus = null;
       }
 
       async function renderShareCardPreview() {
@@ -1749,13 +1856,17 @@
       }
 
       function createShareCard() {
+        const isOpening = shareModal.classList.contains("is-hidden");
+        if (isOpening) shareModalReturnFocus = document.activeElement;
         createShareButton.disabled = true;
         createShareButton.textContent = "Opening...";
         try {
           renderShareCardPreview();
           shareModal.classList.remove("is-hidden");
           document.body.classList.add("has-share-modal");
-          shareModal.focus();
+          const pageShell = document.querySelector(".page-shell");
+          if (pageShell) pageShell.setAttribute("inert", "");
+          if (isOpening) closeShareButton.focus();
         } finally {
           createShareButton.disabled = false;
           createShareButton.textContent = "Create share card";
@@ -1912,7 +2023,26 @@
       });
       shareModal.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+          event.preventDefault();
           closeShareModal();
+          return;
+        }
+
+        if (event.key === "Tab") {
+          const focusableElements = Array.from(shareModal.querySelectorAll(
+            "button:not([disabled]), select:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])"
+          )).filter((element) => !element.closest(".is-hidden"));
+          if (!focusableElements.length) return;
+
+          const firstFocusable = focusableElements[0];
+          const lastFocusable = focusableElements[focusableElements.length - 1];
+          if (event.shiftKey && document.activeElement === firstFocusable) {
+            event.preventDefault();
+            lastFocusable.focus();
+          } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+            event.preventDefault();
+            firstFocusable.focus();
+          }
         }
       });
 
@@ -2025,7 +2155,7 @@
     });
 
     gameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && !e.defaultPrevented) {
         e.preventDefault();
         document.getElementById("search-button").click();
       }

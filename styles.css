@@ -799,7 +799,8 @@ input[type="date"]:focus,
 }
 
 .suggestion-item:hover,
-.suggestion-item:focus {
+.suggestion-item:focus,
+.suggestion-item.is-active {
   outline: none;
   background: var(--cyan);
   color: #080a12;
