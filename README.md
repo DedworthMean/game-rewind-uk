@@ -36,7 +36,7 @@ No build step is required. Open `index.html` in a browser, or serve the folder w
 Run the core regression tests with Node.js:
 
 ```powershell
-node --test tests/core.test.js
+node --test tests/core.test.js tests/worker.test.js
 ```
 
 ## Deployment
