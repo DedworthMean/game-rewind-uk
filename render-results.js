@@ -1,6 +1,8 @@
 (function () {
   function createResultRenderer(context) {
+    let dataRefreshers = [];
     function renderResults(matches, query, options = {}) {
+      dataRefreshers = [];
       const resultsEl = document.getElementById("results");
       context.setLandingChromeVisible(false);
       context.clearShareModals();
@@ -68,8 +70,8 @@
 
         card.appendChild(header);
 
-        const cultureCategories = context.getCultureCategoryDefinitions(game.month, game.year);
-        const defaultSelections = context.getDefaultRetroWeekendSelections(game);
+        let cultureCategories = context.getCultureCategoryDefinitions(game.month, game.year);
+        let defaultSelections = context.getDefaultRetroWeekendSelections(game);
         const isSharedGame = sharedGameKey && context.getGameKey(game) === sharedGameKey;
         let savedSelections = isSharedGame ? { ...(options.initialSelections || {}) } : {};
         let effectiveSelections = context.mergeRetroWeekendSelections(defaultSelections, savedSelections);
@@ -152,12 +154,26 @@
         renderSections();
 
         resultsEl.appendChild(card);
+        dataRefreshers.push(() => {
+          if (!card.isConnected) return;
+          cultureCategories = context.getCultureCategoryDefinitions(game.month, game.year);
+          defaultSelections = context.getDefaultRetroWeekendSelections(game);
+          effectiveSelections = context.mergeRetroWeekendSelections(defaultSelections, savedSelections);
+          preserveScrollPosition(() => {
+            renderSections();
+            retroWeekendController.update(effectiveSelections);
+            updatePickButtonStates();
+          }, retroWeekendController.card);
+        });
       });
       context.scrollResultViewToTop();
     }
 
     return {
-      renderResults
+      renderResults,
+      refreshData() {
+        dataRefreshers.forEach((refresh) => refresh());
+      }
     };
   }
 

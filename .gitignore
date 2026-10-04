@@ -12,3 +12,6 @@ desktop.ini
 tmp/
 temp/
 .wrangler/
+
+# Abandoned local birthday video experiment
+/remotion-birthday/

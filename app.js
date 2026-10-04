@@ -30,14 +30,16 @@
     let isRestoringHistory = false;
     let uniqueGameTitles = [];
     let renderBirthdayList = () => {};
+    let startupInteractionCount = 0;
+    let optionalDataPending = true;
     let dataAvailability = {
-      cinema: true,
-      music: true,
-      wwe: true,
-      rental: true,
-      cartoons: true,
-      retroWeekend: true,
-      console: true
+      cinema: null,
+      music: null,
+      wwe: null,
+      rental: null,
+      cartoons: null,
+      retroWeekend: null,
+      console: null
     };
     const APP_HISTORY_KEY = "game-rewind-view";
     const OFFSETS_YEARS = [10, 15, 20, 25, 30, 35, 40];
@@ -88,8 +90,9 @@
       const keyRental = filterEntriesByMonthYear(rental, month, year);
       const keyCartoons = filterEntriesByMonthYear(cartoons, month, year);
 
-      const emptyText = (key, normalText) => dataAvailability[key]
-        ? normalText
+      const emptyText = (key, normalText) => dataAvailability[key] === null
+        ? "This section is still loading. Games are ready to explore."
+        : dataAvailability[key] ? normalText
         : "This section is temporarily unavailable. Try reloading the page shortly.";
 
       return [
@@ -985,12 +988,16 @@
           wwe,
           rental,
           cartoons,
-          consoleLaunches
+          consoleLaunches,
+          dataAvailability
         }),
         isLoaded: () => isLoaded,
         monthNameFromNumber,
         getCultureCategoryDefinitions,
+        getSectionItemDestination,
+        getCoverUrlForGame,
         getConsoleLaunchesForMonth,
+        normalizeConsoleText,
         renderConsoleLaunchResult,
         showSpecificGame,
         setLandingChromeVisible,
@@ -1001,51 +1008,9 @@
       renderBirthdayList = birthdayFeature.renderBirthdayList;
     }
 
-    async function loadDataIntoApp() {
+    function restoreStartupView() {
       const statusEl = document.getElementById("status");
-
-      try {
-        statusEl.textContent = "Loading data from all sheets...";
-
-        const data = await loadAllData();
-        games = data.games;
-        cinema = data.cinema;
-        music = data.music;
-        wwe = data.wwe;
-        rental = data.rental;
-        cartoons = data.cartoons;
-        retroWeekend = data.retroWeekend;
-        consoleLaunches = data.consoleLaunches;
-        dataAvailability = {
-          cinema: data.cinemaLoaded,
-          music: data.musicLoaded,
-          wwe: data.wweLoaded,
-          rental: data.rentalLoaded,
-          cartoons: data.cartoonsLoaded,
-          retroWeekend: data.retroWeekendLoaded,
-          console: data.consoleLoaded
-        };
-        uniqueGameTitles = getUniqueGameTitles(games);
-        isLoaded = true;
-
-        const unavailableSections = [
-          data.cinemaLoaded ? null : "cinema",
-          data.musicLoaded ? null : "music",
-          data.wweLoaded ? null : "wrestling",
-          data.rentalLoaded ? null : "rental",
-          data.cartoonsLoaded ? null : "kids TV",
-          data.retroWeekendLoaded ? null : "retro weekend",
-          data.consoleLoaded ? null : "console launches"
-        ].filter(Boolean);
-
-        statusEl.textContent =
-          `Loaded ${data.counts.games} games, ${data.counts.cinema} films, ` +
-          `${data.counts.music} tracks, ${data.counts.wwe} wrestling events` +
-          (data.rentalLoaded ? `, ${data.counts.rental} rental titles` : ", rental not loaded") +
-          (data.cartoonsLoaded ? `, ${data.counts.cartoons} kids TV entries` : ", kids TV not loaded") +
-          (data.consoleLoaded ? `, ${data.counts.consoleLaunches} console launches.` : ", console launches not loaded.") +
-          (unavailableSections.length ? ` Some sections could not load: ${unavailableSections.join(", ")}.` : "");
-
+      statusEl.textContent = `Loaded ${games.length} games. Type a game name or browse the archive.`;
         const sharedState = readSharedUrlState();
         if (sharedState) {
           statusEl.textContent =
@@ -1072,9 +1037,67 @@
             renderOnThisMonth();
           }
         }
+    }
+
+    async function loadDataIntoApp() {
+      const statusEl = document.getElementById("status");
+      const notice = document.createElement("div");
+      notice.className = "status";
+      notice.setAttribute("role", "status");
+      notice.setAttribute("aria-live", "polite");
+      statusEl.after(notice);
+      let interactionCountWhenReady = 0;
+      try {
+        statusEl.textContent = "Loading games...";
+        const data = await loadAllData({ onGamesReady(readyGames) {
+          games = readyGames;
+          uniqueGameTitles = getUniqueGameTitles(games);
+          isLoaded = true;
+          notice.textContent = "Games are ready. Loading the other archive sections...";
+          const initialView = parseViewStateFromHash();
+          if (initialView?.type === "console-launch") {
+            statusEl.textContent = "Games are ready. Loading this console launch...";
+          } else {
+            restoreStartupView();
+          }
+          interactionCountWhenReady = startupInteractionCount;
+        }});
+        cinema = data.cinema;
+        music = data.music;
+        wwe = data.wwe;
+        rental = data.rental;
+        cartoons = data.cartoons;
+        retroWeekend = data.retroWeekend;
+        consoleLaunches = data.consoleLaunches;
+        dataAvailability = {
+          cinema: data.cinemaLoaded,
+          music: data.musicLoaded,
+          wwe: data.wweLoaded,
+          rental: data.rentalLoaded,
+          cartoons: data.cartoonsLoaded,
+          retroWeekend: data.retroWeekendLoaded,
+          console: data.consoleLoaded
+        };
+        optionalDataPending = false;
+        const unavailableSections = Object.entries(dataAvailability)
+          .filter(([, loaded]) => !loaded)
+          .map(([key]) => ({ music: "single", wwe: "wrestling", cartoons: "kids TV", retroWeekend: "retro weekend", console: "console launches" }[key] || key));
+        const untouched = startupInteractionCount === interactionCountWhenReady;
+        if (untouched) {
+          restoreStartupView();
+        } else {
+          resultRenderer.refreshData();
+        }
+        notice.textContent = unavailableSections.length
+          ? `Games are ready. Some sections could not load: ${unavailableSections.join(", ")}.`
+          : untouched || document.querySelector(".retro-weekend-card")
+            ? "" : "More archive sections are ready. Your next search or browse will include them.";
+        notice.hidden = !notice.textContent;
       } catch (err) {
+        optionalDataPending = false;
+        notice.remove();
         console.error("loadAllData error:", err);
-        statusEl.textContent = "Error loading data. Check the sheet share settings and tab names, then reload.";
+        statusEl.textContent = "Error loading games. Check the sheet share settings and tab name, then reload.";
       }
     }
 
@@ -1710,7 +1733,7 @@
         input.checked = includedCategories[option.key] !== false;
         input.addEventListener("change", () => {
           includedCategories[option.key] = input.checked;
-          shareCardDataUrl = "";
+          invalidateShareCard();
           syncCurrentShareUrl();
           renderTiles();
           if (!shareModal.classList.contains("is-hidden")) {
@@ -1785,10 +1808,22 @@
       closeShareButton.textContent = "Close";
 
       let shareCardDataUrl = "";
-      let shareCardCanvas = null;
       let selectedTemplateKey = SHARE_CARD_TEMPLATES[0].key;
       let sharePreviewRequestId = 0;
       let shareModalReturnFocus = null;
+      const shareRenderer = window.GameRewindShareCard.createLatestShareCardRenderer(() => {
+        const canvas = document.createElement("canvas");
+        const selections = Object.fromEntries(Object.entries(currentSelections)
+          .map(([key, selection]) => [key, { ...selection }]));
+        return drawRetroWeekendShareCard(canvas, game, selections, gameCoverUrl,
+          { ...includedCategories }, selectedTemplateKey);
+      });
+
+      function invalidateShareCard() {
+        shareRenderer.invalidate();
+        shareCardDataUrl = "";
+        sharePreviewRequestId += 1;
+      }
 
       card.appendChild(kicker);
       titleRow.appendChild(title);
@@ -1811,6 +1846,7 @@
       document.body.appendChild(shareModal);
 
       function closeShareModal() {
+        sharePreviewRequestId += 1;
         shareModal.classList.add("is-hidden");
         document.body.classList.remove("has-share-modal");
         const pageShell = document.querySelector(".page-shell");
@@ -1836,21 +1872,17 @@
         sharePreview.appendChild(loading);
 
         try {
-          if (!shareCardCanvas) {
-            const canvas = document.createElement("canvas");
-            shareCardCanvas = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
-          }
-
-          if (requestId !== sharePreviewRequestId) return;
+          const { canvas } = await shareRenderer.getRender();
+          if (requestId !== sharePreviewRequestId || !shareModal.isConnected || shareModal.classList.contains("is-hidden")) return;
 
           const image = document.createElement("img");
           image.className = "share-card-rendered-preview";
           image.alt = "Share card preview";
-          image.src = shareCardCanvas.toDataURL("image/jpeg", 0.9);
+          image.src = canvas.toDataURL("image/jpeg", 0.9);
           sharePreview.innerHTML = "";
           sharePreview.appendChild(image);
         } catch (err) {
-          if (requestId !== sharePreviewRequestId) return;
+          if (requestId !== sharePreviewRequestId || !shareModal.isConnected || shareModal.classList.contains("is-hidden")) return;
           renderHtmlShareCard(sharePreview, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
         }
       }
@@ -1977,16 +2009,20 @@
       }
 
       getCoverUrlForGame(game).then((coverUrl) => {
-        gameCoverUrl = coverUrl || "";
+        if (!card.isConnected) return;
+        const nextCoverUrl = coverUrl || "";
+        if (gameCoverUrl === nextCoverUrl) return;
+        gameCoverUrl = nextCoverUrl;
+        invalidateShareCard();
         renderTiles();
+        if (!shareModal.classList.contains("is-hidden")) renderShareCardPreview();
       });
 
       createShareButton.addEventListener("click", createShareCard);
       copyLinkButton.addEventListener("click", copyShareLink);
       templateSelect.addEventListener("change", () => {
         selectedTemplateKey = templateSelect.value;
-        shareCardDataUrl = "";
-        shareCardCanvas = null;
+        invalidateShareCard();
         renderShareCardPreview();
       });
       downloadShareButton.addEventListener("click", async () => {
@@ -1994,21 +2030,24 @@
         downloadShareButton.textContent = "Preparing...";
 
         try {
-          if (!shareCardCanvas) {
-            const canvas = document.createElement("canvas");
-            shareCardCanvas = await drawRetroWeekendShareCard(canvas, game, currentSelections, gameCoverUrl, includedCategories, selectedTemplateKey);
-          }
-
-          if (isMobileShareDevice()) {
-            await shareOrDownloadMobileJpg(shareCardCanvas, game);
-          } else {
-            if (!shareCardDataUrl) {
-              shareCardDataUrl = shareCardCanvas.toDataURL("image/png");
+          for (;;) {
+            const { canvas, revision } = await shareRenderer.getRender();
+            if (!shareModal.isConnected || shareModal.classList.contains("is-hidden")) return;
+            if (revision !== shareRenderer.getRevision()) continue;
+            if (isMobileShareDevice()) {
+              const shared = await shareOrDownloadMobileJpg(canvas, game,
+                () => revision === shareRenderer.getRevision() && shareModal.isConnected && !shareModal.classList.contains("is-hidden"));
+              if (!shared) continue;
+            } else {
+              if (!shareCardDataUrl) shareCardDataUrl = canvas.toDataURL("image/png");
+              downloadShareCard(shareCardDataUrl, game, "png");
             }
-            downloadShareCard(shareCardDataUrl, game, "png");
+            break;
           }
         } catch (err) {
-          window.alert(`Download failed: ${err?.message || "Try another card style or reload the page."}`);
+          if (err?.name !== "AbortError") {
+            window.alert(`Download failed: ${err?.message || "Try another card style or reload the page."}`);
+          }
         } finally {
           downloadShareButton.disabled = false;
           downloadShareButton.textContent = isMobileShareDevice() ? "Share JPG" : "Download PNG";
@@ -2052,8 +2091,7 @@
         card,
         update(nextSelections) {
           currentSelections = nextSelections || {};
-          shareCardDataUrl = "";
-          shareCardCanvas = null;
+          invalidateShareCard();
           syncCurrentShareUrl();
           renderTiles();
           if (!shareModal.classList.contains("is-hidden")) {
@@ -2140,12 +2178,17 @@
     document.getElementById("results-search-form").addEventListener("submit", handleResultsSearch);
     document.getElementById("search-form").addEventListener("submit", handleSearch);
 
-    window.addEventListener("load", () => {
-      loadDataIntoApp();
-      document.getElementById("game-input").focus();
+    // Start as soon as the scripts execute, without waiting for fonts and images.
+    ["click", "input", "change", "keydown"].forEach((eventName) => {
+      document.addEventListener(eventName, () => {
+        if (optionalDataPending) startupInteractionCount += 1;
+      }, true);
     });
+    loadDataIntoApp();
+    document.getElementById("game-input").focus();
 
     window.addEventListener("popstate", (event) => {
+      if (optionalDataPending) startupInteractionCount += 1;
       const state = event.state;
       const viewState = state && state[APP_HISTORY_KEY]
         ? state.view

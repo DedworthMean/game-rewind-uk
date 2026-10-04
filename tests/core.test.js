@@ -196,3 +196,122 @@ test("console aliases and December launch windows remain correct", () => {
     ["Launch Game", "January Game"]
   );
 });
+
+
+test("Games become usable before optional sheets finish", async () => {
+  let releaseOptional;
+  const optionalGate = new Promise((resolve) => { releaseOptional = resolve; });
+  let signalReady;
+  const ready = new Promise((resolve) => { signalReady = resolve; });
+  const data = loadBrowserScript("game-rewind-data.js", async (url) => {
+    if (String(url).endsWith("/Games")) {
+      return { ok: true, json: async () => [{ "Game Title": "Doom", "Console": "PC", "UK Release Date": "October 1993" }] };
+    }
+    await optionalGate;
+    return { ok: true, json: async () => [] };
+  }).GameRewindData;
+  let completed = false;
+  const loading = data.loadAllData({ onGamesReady: signalReady }).then((result) => { completed = true; return result; });
+  try {
+    const games = await ready;
+    assert.equal(games[0].title, "Doom");
+    assert.equal(completed, false);
+  } finally {
+    releaseOptional();
+  }
+  const result = await loading;
+  assert.equal(result.counts.games, 1);
+  assert.equal(result.cinemaLoaded, true);
+});
+
+test("invalid required Games fail without waiting for optional sheets", async () => {
+  let releaseOptional;
+  const gate = new Promise((resolve) => { releaseOptional = resolve; });
+  const data = loadBrowserScript("game-rewind-data.js", async (url) => {
+    if (!String(url).endsWith("/Games")) await gate;
+    return { ok: true, json: async () => [] };
+  }).GameRewindData;
+  let readyCalled = false;
+  try {
+    await assert.rejects(() => data.loadAllData({ onGamesReady: () => { readyCalled = true; } }), /no valid rows/);
+    assert.equal(readyCalled, false);
+  } finally {
+    releaseOptional();
+  }
+});
+
+
+test("optional feed failures preserve early Games readiness and final availability", async () => {
+  const data = loadBrowserScript("game-rewind-data.js", async (url) => {
+    if (String(url).endsWith("/Cinema")) throw new Error("Optional outage");
+    return { ok: true, json: async () => String(url).endsWith("/Games")
+      ? [{ "Game Title": "Doom", "UK Release Date": "October 1993" }] : [] };
+  }).GameRewindData;
+  let readyCalled = false;
+  const result = await data.loadAllData({ onGamesReady: () => { readyCalled = true; } });
+  assert.equal(readyCalled, true);
+  assert.equal(result.counts.games, 1);
+  assert.equal(result.cinemaLoaded, false);
+  assert.equal(result.musicLoaded, true);
+});
+
+
+function deferredRender() {
+  let resolve, reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+
+test("share preview and download both keep the newest style when older renders finish last", async () => {
+  const factory = loadBrowserScript("share-card.js").GameRewindShareCard;
+  const old = deferredRender();
+  const latest = deferredRender();
+  let calls = 0;
+  const renderer = factory.createLatestShareCardRenderer(() => (++calls === 1 ? old.promise : latest.promise));
+  const oldPreview = renderer.getRender();
+  await Promise.resolve();
+  renderer.invalidate();
+  const currentPreview = renderer.getRender();
+  const download = renderer.getRender();
+  await Promise.resolve();
+  const expected = { style: "teletext" };
+  latest.resolve(expected);
+  assert.equal((await currentPreview).canvas, expected);
+  old.resolve({ style: "magazine" });
+  assert.equal((await oldPreview).canvas, expected);
+  assert.equal((await download).canvas, expected);
+  assert.equal((await renderer.getRender()).canvas, expected);
+  assert.equal(calls, 2);
+});
+
+test("late cover or category changes replace a completed share render", async () => {
+  const factory = loadBrowserScript("share-card.js").GameRewindShareCard;
+  let artwork = "placeholder";
+  const renderer = factory.createLatestShareCardRenderer(() => ({ artwork }));
+  const before = await renderer.getRender();
+  artwork = "loaded cover";
+  renderer.invalidate();
+  const after = await renderer.getRender();
+  assert.equal(before.canvas.artwork, "placeholder");
+  assert.equal(after.canvas.artwork, "loaded cover");
+  assert.notEqual(before.revision, after.revision);
+});
+
+test("obsolete render failures do not break a newer share card and current failures can retry", async () => {
+  const factory = loadBrowserScript("share-card.js").GameRewindShareCard;
+  const old = deferredRender();
+  let calls = 0;
+  const renderer = factory.createLatestShareCardRenderer(() => {
+    calls += 1;
+    if (calls === 1) return old.promise;
+    if (calls === 2) throw new Error("Temporary render failure");
+    return { style: "working" };
+  });
+  const oldPreview = renderer.getRender();
+  await Promise.resolve();
+  renderer.invalidate();
+  await assert.rejects(() => renderer.getRender(), /Temporary render failure/);
+  const current = await renderer.getRender();
+  old.reject(new Error("Obsolete failure"));
+  assert.equal((await oldPreview).canvas, current.canvas);
+});

@@ -564,9 +564,15 @@
     }
   }
 
-  async function loadAllData() {
+  async function loadAllData({ onGamesReady } = {}) {
+    const gamesPromise = fetchJsonArray(SHEET_URLS.games).then((rows) => {
+      const games = parseGames(rows);
+      assertGamesAvailable(games);
+      if (onGamesReady) onGamesReady(games);
+      return { loaded: true, rows };
+    });
     const [gamesResult, cinemaResult, musicResult, wweResult, rentalResult, cartoonsResult, retroWeekendResult, consoleResult] = await Promise.all([
-      loadOptionalSheet("Games", () => fetchJsonArray(SHEET_URLS.games)),
+      gamesPromise,
       loadOptionalSheet("Cinema", () => fetchJsonArray(SHEET_URLS.cinema)),
       loadOptionalSheet("Music", () => fetchJsonArray(SHEET_URLS.music)),
       loadOptionalSheet("WWE", () => fetchJsonArray(SHEET_URLS.wwe)),

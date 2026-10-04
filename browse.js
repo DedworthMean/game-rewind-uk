@@ -93,7 +93,7 @@
         list.innerHTML = "";
         const month = parseInt(monthSelect.value, 10);
         const year = parseInt(yearSelect.value, 10);
-        if (updateHistory && !options.skipHistory) {
+        if (updateHistory) {
           context.writeViewHistory({ type: "browse-date", month, year });
         }
 
@@ -213,7 +213,7 @@
       function renderList({ updateHistory = true } = {}) {
         list.innerHTML = "";
         const selected = consoleSelect.value;
-        if (updateHistory && !options.skipHistory) {
+        if (updateHistory) {
           context.writeViewHistory({ type: "browse-console", console: selected });
         }
 

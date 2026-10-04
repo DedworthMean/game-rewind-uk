@@ -1,4 +1,35 @@
 (function () {
+  // Preview and export share one render for each version of the card inputs.
+  function createLatestShareCardRenderer(render) {
+    let revision = 0;
+    let pending = null;
+    return {
+      invalidate() {
+        revision += 1;
+        pending = null;
+      },
+      getRevision() { return revision; },
+      async getRender() {
+        for (;;) {
+          if (!pending) {
+            const entry = { revision, promise: Promise.resolve().then(render) };
+            pending = entry;
+          }
+          const entry = pending;
+          try {
+            const canvas = await entry.promise;
+            if (entry.revision === revision) return { canvas, revision: entry.revision };
+          } catch (error) {
+            if (entry.revision === revision) {
+              if (pending === entry) pending = null;
+              throw error;
+            }
+          }
+        }
+      }
+    };
+  }
+
   function createShareCardTools(context) {
     const SHARE_CARD_TEMPLATES = window.GameRewindShareCardTemplates || [];
 
@@ -586,12 +617,13 @@
       link.remove();
     }
 
-    async function shareOrDownloadMobileJpg(canvas, game) {
+    async function shareOrDownloadMobileJpg(canvas, game, isCurrent = () => true) {
       const blob = await canvasToBlob(canvas, "image/jpeg", 0.9);
       if (!blob) {
         throw new Error("Could not create JPG");
       }
 
+      if (!isCurrent()) return false;
       const file = new File([blob], getShareCardFileName(game, "jpg"), { type: "image/jpeg" });
       if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
         await navigator.share({
@@ -599,10 +631,13 @@
           title: "My Game Rewind UK Retro Weekend",
           text: "Made with Game Rewind UK"
         });
-        return;
+        return true;
       }
 
-      downloadShareCard(URL.createObjectURL(blob), game, "jpg");
+      const objectUrl = URL.createObjectURL(blob);
+      downloadShareCard(objectUrl, game, "jpg");
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      return true;
     }
 
     return {
@@ -618,6 +653,7 @@
   }
 
   window.GameRewindShareCard = {
-    createShareCardTools
+    createShareCardTools,
+    createLatestShareCardRenderer
   };
 })();

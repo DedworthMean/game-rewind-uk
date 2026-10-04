@@ -25,7 +25,7 @@ The app loads data from a Google Sheet through OpenSheet and Google Visualizatio
 - `Rental`
 - `Cartoons`
 
-The Games sheet is required. Other sections are treated as optional so the site can still load if one supporting tab is temporarily unavailable.
+The Games sheet is required. Search and browsing become available as soon as Games loads, while optional sections finish in the background. Loading and unavailable sections are labelled separately. Active game results update when the remaining feeds finish, preserving picks and category toggles. An interacted-with browse or Birthday List stays intact; its next search/build includes newly loaded data.
 
 ## Local Use
 
@@ -36,7 +36,7 @@ No build step is required. Open `index.html` in a browser, or serve the folder w
 Run the core regression tests with Node.js:
 
 ```powershell
-node --test tests/core.test.js tests/worker.test.js
+node --test tests/*.test.js
 ```
 
 ## Deployment

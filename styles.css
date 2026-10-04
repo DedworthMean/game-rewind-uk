@@ -31,7 +31,7 @@ body {
   font-family: "Chakra Petch", system-ui, sans-serif;
   background:
     linear-gradient(rgba(4, 5, 12, 0.78), rgba(4, 5, 12, 0.94)),
-    url("background.png") center / cover fixed,
+    url("background.webp") center / cover fixed,
     var(--bg);
   overflow-x: hidden;
 }
@@ -1742,12 +1742,105 @@ input[type="date"]:focus,
 }
 
 .birthday-summary {
-  padding: 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem;
   border: 1px solid rgba(255, 246, 216, 0.16);
-  color: var(--yellow);
+  color: var(--muted);
   font-weight: 800;
   line-height: 1.4;
-  background: rgba(255, 246, 216, 0.055);
+  background:
+    radial-gradient(circle at 100% 0, rgba(49, 234, 255, 0.12), transparent 40%),
+    linear-gradient(135deg, rgba(166, 83, 255, 0.17), rgba(255, 246, 216, 0.045));
+}
+
+.birthday-summary > strong {
+  color: #ffffff;
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  line-height: 1.4;
+}
+
+.birthday-summary-kicker {
+  color: var(--yellow);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.birthday-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.birthday-stats span {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem;
+  border: 1px solid rgba(255, 246, 216, 0.13);
+  background: rgba(8, 8, 15, 0.34);
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.birthday-stats strong {
+  color: var(--green);
+  font-size: 1.15rem;
+}
+
+.birthday-jumps,
+.birthday-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.birthday-jumps > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-jumps button,
+.birthday-filters button {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(255, 246, 216, 0.24);
+  background: rgba(255, 246, 216, 0.04);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-jumps button:hover,
+.birthday-jumps button:focus-visible,
+.birthday-filters button:hover,
+.birthday-filters button:focus-visible,
+.birthday-filters button.is-active {
+  outline: none;
+  border-color: var(--cyan);
+  background: rgba(49, 234, 255, 0.12);
+  color: var(--cyan);
+}
+
+.birthday-filters button:disabled {
+  cursor: not-allowed;
+  border-color: rgba(255, 246, 216, 0.1);
+  background: rgba(255, 246, 216, 0.025);
+  color: rgba(255, 246, 216, 0.38);
+}
+
+.birthday-filters {
+  padding: 0.65rem;
+  border: 1px solid rgba(255, 246, 216, 0.12);
+  background: rgba(8, 8, 15, 0.28);
 }
 
 .birthday-timeline {
@@ -1765,6 +1858,16 @@ input[type="date"]:focus,
   background:
     linear-gradient(90deg, rgba(166, 83, 255, 0.14), transparent 32%),
     rgba(255, 246, 216, 0.045);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.birthday-year-card:focus {
+  outline: none;
+}
+
+.birthday-year-card.is-highlighted {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(49, 234, 255, 0.18), 0 0 28px rgba(49, 234, 255, 0.14);
 }
 
 .birthday-year-marker {
@@ -1805,6 +1908,22 @@ input[type="date"]:focus,
   line-height: 1.4;
 }
 
+.birthday-highlights {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.55rem;
+}
+
+.birthday-highlights span {
+  overflow: hidden;
+  color: var(--cyan);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .birthday-more {
   margin-top: 0.35rem;
   padding: 0;
@@ -1821,6 +1940,500 @@ input[type="date"]:focus,
 .birthday-more:focus-visible {
   outline: none;
   color: var(--green);
+}
+
+.birthday-explore {
+  margin-top: 0.65rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(166, 83, 255, 0.7);
+  background: rgba(166, 83, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-explore:hover,
+.birthday-explore:focus-visible {
+  outline: none;
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.birthday-present-button {
+  margin: 0.65rem 0 0 0.45rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--yellow);
+  background: rgba(255, 216, 74, 0.1);
+  color: var(--yellow);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-present-button:hover,
+.birthday-present-button:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.birthday-present-button:disabled {
+  cursor: not-allowed;
+  border-color: rgba(255, 246, 216, 0.12);
+  color: rgba(255, 246, 216, 0.38);
+}
+
+.birthday-present-builder {
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 216, 74, 0.38);
+  background:
+    linear-gradient(135deg, rgba(255, 216, 74, 0.08), transparent 34%),
+    rgba(8, 8, 15, 0.42);
+}
+
+.birthday-present-heading {
+  color: #ffffff;
+  font-size: 0.94rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-present-intro,
+.birthday-present-result-meta,
+.birthday-present-list-empty {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.birthday-present-intro {
+  margin-top: 0.3rem;
+}
+
+.birthday-present-label {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-present-console,
+.birthday-present-search {
+  width: 100%;
+  color: #ffffff;
+}
+
+.birthday-present-result-meta {
+  margin-top: 0.5rem;
+}
+
+.birthday-present-games {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 430px;
+  margin-top: 0.65rem;
+  padding-right: 0.35rem;
+  overflow: auto;
+}
+
+.birthday-present-game-group {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.birthday-present-game-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.35rem 0.45rem;
+  border-left: 2px solid var(--violet);
+  background: #11101a;
+  color: var(--cyan);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-present-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid rgba(255, 246, 216, 0.14);
+  background: rgba(255, 246, 216, 0.035);
+  color: #ffffff;
+  text-align: left;
+}
+
+.birthday-present-game span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.birthday-present-game span:nth-child(2) {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.birthday-present-game strong {
+  color: var(--yellow);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.birthday-present-game:hover,
+.birthday-present-game:focus-visible,
+.birthday-present-game.is-selected {
+  outline: none;
+  border-color: var(--green);
+  background: rgba(57, 240, 174, 0.1);
+}
+
+.birthday-present-game.is-selected strong {
+  color: var(--green);
+}
+
+.birthday-present-list {
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(49, 234, 255, 0.34);
+  background: rgba(49, 234, 255, 0.055);
+}
+
+.birthday-present-list-title {
+  color: var(--yellow);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-present-console-pick {
+  margin-top: 0.4rem;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.birthday-present-list ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.35rem;
+}
+
+.birthday-present-count {
+  margin-top: 0.55rem;
+  color: var(--green);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-animation-button {
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--yellow);
+  background: var(--yellow);
+  color: #08080f;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-animation-button:hover,
+.birthday-animation-button:focus-visible {
+  outline: none;
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.birthday-animation-panel {
+  width: min(94vw, 560px);
+  max-height: 96vh;
+  overflow: auto;
+  padding: 0.85rem;
+  border: 1px solid var(--violet);
+  background: #09070f;
+  box-shadow: 0 0 50px rgba(166, 83, 255, 0.28);
+}
+
+.birthday-animation-header,
+.birthday-animation-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.birthday-animation-controls button {
+  padding: 0.38rem 0.5rem;
+  border: 1px solid rgba(255, 246, 216, 0.3);
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-animation-controls button:hover,
+.birthday-animation-controls button:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.birthday-animation-stage {
+  position: relative;
+  width: min(100%, 405px);
+  aspect-ratio: 9 / 16;
+  margin: 0.8rem auto 0;
+  overflow: hidden;
+  border: 1px solid rgba(49, 234, 255, 0.45);
+  background:
+    radial-gradient(circle at 80% 10%, rgba(49, 234, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 15% 85%, rgba(166, 83, 255, 0.24), transparent 34%),
+    #08080f;
+}
+
+.birthday-animation-stage::after {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.025) 3px 4px);
+  content: "";
+}
+
+.birthday-animation-frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8%;
+  opacity: 0;
+  text-align: center;
+}
+
+.birthday-animation-kicker {
+  color: var(--yellow);
+  font-size: clamp(0.7rem, 2.5vw, 0.92rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.birthday-animation-age {
+  margin-top: 0.7rem;
+  color: #ffffff;
+  font-family: "Press Start 2P", "Chakra Petch", system-ui, sans-serif;
+  font-size: clamp(2.3rem, 12vw, 4.7rem);
+  line-height: 1.15;
+  text-shadow: 4px 4px 0 rgba(166, 83, 255, 0.55);
+  text-transform: uppercase;
+}
+
+.birthday-animation-intro .birthday-animation-age {
+  font-size: clamp(1.25rem, 5vw, 1.9rem);
+}
+
+.birthday-animation-date,
+.birthday-animation-console-name {
+  margin-top: 0.55rem;
+  color: var(--cyan);
+  font-size: clamp(1.1rem, 5vw, 1.75rem);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-animation-copy {
+  margin-top: 0.7rem;
+  color: var(--muted);
+  font-size: clamp(0.78rem, 3vw, 1rem);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.birthday-animation-present-layout {
+  position: relative;
+  width: 100%;
+  height: 58%;
+  min-height: 350px;
+  margin-top: 0.65rem;
+}
+
+.birthday-animation-console-art {
+  display: grid;
+  position: absolute;
+  top: 31%;
+  left: 14%;
+  z-index: 2;
+  width: 72%;
+  aspect-ratio: 356 / 256;
+  place-items: center;
+  overflow: visible;
+}
+
+.birthday-animation-console-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.birthday-animation-orbit-game {
+  position: absolute;
+  z-index: 3;
+  width: 23%;
+  opacity: 0;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.72));
+}
+
+.birthday-animation-orbit-game.position-1 {
+  top: 0;
+  left: 2%;
+  transform: rotate(-6deg);
+}
+
+.birthday-animation-orbit-game.position-2 {
+  top: 0;
+  right: 2%;
+  transform: rotate(6deg);
+}
+
+.birthday-animation-orbit-game.position-3 {
+  bottom: 0;
+  left: 0;
+  transform: rotate(5deg);
+}
+
+.birthday-animation-orbit-game.position-4 {
+  right: 0;
+  bottom: 0;
+  transform: rotate(-5deg);
+}
+
+.birthday-animation-orbit-game.position-5 {
+  bottom: -2%;
+  left: 38.5%;
+  transform: rotate(2deg);
+}
+
+.birthday-animation-game-art {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  place-items: center;
+  overflow: hidden;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
+.birthday-animation-game-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.birthday-animation-present-date {
+  margin-top: 0.65rem;
+  color: var(--yellow);
+  font-weight: 900;
+  opacity: 0;
+  text-transform: uppercase;
+}
+
+.birthday-animation-stage.is-playing .birthday-animation-intro {
+  animation: birthday-intro-frame 12s linear forwards;
+}
+
+.birthday-animation-stage.is-playing .birthday-animation-console {
+  animation: birthday-console-frame 12s linear forwards;
+}
+
+.birthday-animation-stage.is-playing .birthday-animation-orbit-game {
+  animation: birthday-game-arrival 0.55s calc(3.1s + (var(--reveal-index) * 0.48s)) ease-out forwards;
+}
+
+.birthday-animation-stage.is-playing .birthday-animation-present-date {
+  animation: birthday-present-date-arrival 12s linear forwards;
+}
+
+@keyframes birthday-intro-frame {
+  0% { opacity: 0; transform: scale(0.94); }
+  4%, 17% { opacity: 1; transform: scale(1); }
+  22%, 100% { opacity: 0; transform: scale(1.04); }
+}
+
+@keyframes birthday-console-frame {
+  0%, 19% { opacity: 0; transform: translateY(24px); }
+  25%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes birthday-present-date-arrival {
+  0%, 73% { opacity: 0; transform: translateY(10px); }
+  80%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes birthday-game-arrival {
+  from { opacity: 0; scale: 0.72; }
+  to { opacity: 1; scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .birthday-animation-stage.is-playing .birthday-animation-frame,
+  .birthday-animation-stage.is-playing .birthday-animation-orbit-game,
+  .birthday-animation-stage.is-playing .birthday-animation-present-date {
+    animation-duration: 0.01ms;
+  }
+
+  .birthday-animation-stage.is-playing .birthday-animation-console,
+  .birthday-animation-stage.is-playing .birthday-animation-orbit-game,
+  .birthday-animation-stage.is-playing .birthday-animation-present-date {
+    opacity: 1;
+  }
+}
+
+.birthday-year-details {
+  margin-top: 0.45rem;
+  padding-top: 0.15rem;
+}
+
+.birthday-culture-group {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 246, 216, 0.12);
+}
+
+.birthday-culture-heading {
+  color: var(--yellow);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.birthday-culture-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.birthday-culture-list li + li,
+.birthday-game-list li + li {
+  margin-top: 0.25rem;
+}
+
+.birthday-filter-empty {
+  padding: 1rem;
+  border: 1px dashed rgba(255, 246, 216, 0.2);
 }
 
 .birthday-game-list {
@@ -2000,6 +2613,45 @@ input[type="date"]:focus,
   .birthday-form,
   .birthday-year-card {
     grid-template-columns: 1fr;
+  }
+
+  .birthday-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .birthday-jumps,
+  .birthday-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+  }
+
+  .birthday-jumps > *,
+  .birthday-filters > * {
+    flex: 0 0 auto;
+  }
+
+  .birthday-highlights span {
+    white-space: normal;
+  }
+
+  .birthday-explore {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .birthday-present-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .birthday-present-game {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .birthday-present-game span:nth-child(2) {
+    display: none;
   }
 
   .search-wrapper .suggestions,

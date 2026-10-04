@@ -4,23 +4,27 @@
 
 Use this folder:
 
-`C:\Users\deana\OneDrive\Documents\App\Game Rewind\game-rewind-uk`
+`C:\Users\deana\Documents\App\Game Rewind\game-rewind-uk`
 
-This is the active repo/site folder. Do not work from the older `Documents\App\Game Rewind\game-rewind-uk` or `App` folders unless the user explicitly asks.
+This is the active repo/site folder, confirmed by the user on 4 October 2026. The previous OneDrive location is unavailable.
 
 Remote:
 
 `https://github.com/DedworthMean/game-rewind-uk.git`
 
-Reliability/security branch:
+Reliability/security work:
 
-`agent/reliability-security-proofing`
+- Development branch: `agent/reliability-security-proofing`
+- Merged into `main` through [PR #1](https://github.com/DedworthMean/game-rewind-uk/pull/1) on 4 August 2026.
+- Merge commit: `aeb7f06`.
+- Main site hardening: `0fa82e0`.
+- Versioned Worker and initial Worker tests: `5527abc`.
+- Production deployment settings: `71f014a`.
+- Final Worker upstream-access, token-cache, and rate-limit hardening: `635e83d`.
 
-The main site hardening is in `0fa82e0`; the versioned Worker and its tests were added in `5527abc`.
+Current git baseline:
 
-Current local git state:
-
-Local branch should be clean apart from intentional handoff edits if this file has just been updated.
+Use `main`, tracking `origin/main`, as the completed reliability/security baseline. Always run `git status --short --branch` before making changes rather than assuming the working tree is clean.
 
 ## August 2026 Reliability And Security Pass
 
@@ -29,19 +33,21 @@ Local branch should be clean apart from intentional handoff edits if this file h
 - Sheet requests time out and retry once; optional feeds degrade independently while the required Games feed fails clearly when it has no usable rows.
 - Search suggestions are relevance-ranked, deduplicated, capped at 12, and keyboard accessible.
 - URL-restored application state and external links are validated before use.
-- Core regression coverage lives in `tests/core.test.js` and `tests/worker.test.js`; run both with `node --test tests/core.test.js tests/worker.test.js`.
+- Core regression coverage lives in `tests/core.test.js` and `tests/worker.test.js`; run both with `node --test tests/*.test.js`.
 
-The IGDB Worker source is now versioned in `cloudflare-worker/worker.js`, with its Wrangler configuration alongside it. The hardened version enforces `GET`/`OPTIONS`, bounds and normalises titles, safely escapes the IGDB query, canonicalises cache keys, validates upstream responses, applies upstream timeouts, and avoids returning upstream error details. `tests/worker.test.js` covers the important request and response cases. It was deployed to production as Cloudflare version `918dc53a-18c7-49dd-90bf-459ca06e6002`. Live checks confirmed `POST` returns 405, `OPTIONS` returns 204, missing and oversized titles return 400, and a normal `Doom` lookup returns 200 with a valid IGDB cover URL. Preview URLs were disabled again in the dashboard after deployment, and `wrangler.jsonc` now records `preview_urls: false` for future deploys.
+The IGDB Worker source is versioned in `cloudflare-worker/worker.js`, with its Wrangler configuration alongside it. The hardened version enforces `GET`/`OPTIONS`, bounds and normalises titles, safely escapes IGDB searches, canonicalises cache keys, validates upstream responses, applies upstream timeouts, and avoids returning upstream error details. Twitch client credentials are sent in the form-encoded token-request body rather than the URL. Valid Twitch access tokens are reused for up to one hour. Successful cover lookups are cached for seven days and negative lookups for one hour. The Cloudflare `COVER_RATE_LIMITER` binding allows 120 uncached cover lookups per 60 seconds per location.
+
+The current production deployment is Cloudflare version `faadd224-4ad8-48b0-bc6d-82b37c52ac7b` at `https://igdb-cover-proxy.deanagacy.workers.dev`. Existing Twitch secrets were preserved during deployment. Live checks confirmed `OPTIONS` returns 204, missing titles return 400, and a normal `Doom` lookup returns 200 with a valid IGDB cover URL and seven-day cache header. Wrangler recognises the rate-limit binding, preview URLs remain disabled, and `wrangler.jsonc` records `preview_urls: false` and `keep_vars: true` for future deploys.
+
+Wrangler and GitHub CLI are authorised locally using credentials protected by the Windows keyring. No Cloudflare, Twitch, or GitHub credentials are committed to the repository.
 
 The live data audit found 77 undated SNES game rows, seven undated cartoon rows, one dated rental row without a title, two game duplicate candidates, 23 cartoon duplicate candidates, and one WWE image cell containing a TMDB page URL rather than an image URL. Duplicate candidates were not removed because repeat releases/broadcasts may be intentional.
 
 ## Current Local Server
 
-The local site has been tested at:
+No local preview server should currently be running. The final post-merge smoke test used a temporary Node `http-server` at `http://127.0.0.1:8765/`; it was stopped after testing.
 
-`http://127.0.0.1:8097/index.html`
-
-If it is not running, start it from the active project folder with Python HTTP server on port `8097`.
+For future checks, start a local server from the active project folder using the bundled Python runtime on port `8097`, or use a temporary Node `http-server` if preferred.
 
 ## Current Feature State
 
@@ -94,7 +100,7 @@ If someone uses Browse by Console and selects a console with a matching launch r
 
 Console launch image files live in:
 
-`C:\Users\deana\OneDrive\Documents\App\Game Rewind\game-rewind-uk\console`
+`C:\Users\deana\Documents\App\Game Rewind\game-rewind-uk\console`
 
 Aliases in `app.js` map sheet console names like `SONY PLAYSTATION`, `XBOX LAUNCH`, and `SONY PSP` to the right file.
 
@@ -241,6 +247,20 @@ Keep these earlier features intact:
 
 ## Tested Recently
 
+Final reliability/security checks on 4 August 2026:
+
+- `node --test tests/*.test.js`: all 18 tests passed.
+- `npx wrangler deploy --dry-run`: passed and recognised `COVER_RATE_LIMITER` at 120 requests per 60 seconds.
+- Production Worker lookup: `Doom` returned 200 with a valid IGDB cover URL.
+- Missing-title request returned 400; `OPTIONS` returned 204; CORS and cache headers were present.
+- Local browser smoke test loaded 7,116 games plus all optional culture feeds without page errors.
+- Search suggestions, multiple-console selection, Browse by Date, Browse by Console, Random Game, Birthday List, About navigation, and share-card preview all worked.
+- Browser Back restored the previous Doom result after a random pick.
+- Refresh restored the hash-routed Doom result.
+- The Doom PS1 cover and culture artwork rendered successfully.
+- No browser/JavaScript errors appeared during the smoke test.
+- A true phone-sized viewport was not emulated during this final smoke test; the earlier mobile-sized checks below remain the latest direct mobile-layout coverage.
+
 Recent checks included:
 
 - `node --check app.js`
@@ -279,7 +299,15 @@ Earlier smoke tests confirmed:
 Start a local server from the active project folder:
 
 ```powershell
-Start-Process -FilePath 'C:\Users\deana\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -ArgumentList '-m','http.server','8097','--bind','127.0.0.1' -WorkingDirectory 'C:\Users\deana\OneDrive\Documents\App\Game Rewind\game-rewind-uk' -WindowStyle Hidden
+Start-Process -FilePath 'C:\Users\deana\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -ArgumentList '-m','http.server','8097','--bind','127.0.0.1' -WorkingDirectory 'C:\Users\deana\Documents\App\Game Rewind\game-rewind-uk' -WindowStyle Hidden
+```
+
+Run the regression tests and validate the Worker configuration:
+
+```powershell
+node --test tests/*.test.js
+Set-Location cloudflare-worker
+npx wrangler deploy --dry-run
 ```
 
 Check git state:
@@ -292,7 +320,8 @@ git log -5 --oneline
 ## Current User Preferences
 
 - Keep changes local until the user explicitly says to push.
-- Use the active OneDrive repo path above.
+- Treat `main` as the current completed reliability/security baseline; PR #1 is already merged.
+- Use the user-confirmed Documents repo path above.
 - The console launch artwork is designed as 1600 x 900 and should remain wide, not cropped into vertical box-art shape.
 - Console launch pages should feel like standalone special results.
 - Date browse should force console launches to the top when that launch month/year is selected.
@@ -304,5 +333,17 @@ git log -5 --oneline
 ## Useful First Prompt For Next Window
 
 ```text
-Read HANDOFF.md and continue from the current pushed Game Rewind UK state. Use the OneDrive repo path. Do not push unless I ask.
+Read HANDOFF.md and continue from the current merged Game Rewind UK main branch. Use the Documents repo path. Do not push unless I ask.
 ```
+
+
+## 4 October 2026 Health Check Updates
+
+- Removed eager embedded share-card backgrounds from initial page loading. Sharing uses the selected existing template image.
+- Main background and header logo use smaller WebP files; original PNGs remain for social previews.
+- Games unlock search/browsing before optional feeds finish. Late culture updates preserve game picks, toggles, scroll and history. Interacted-with Birthday List/browse views stay intact until the next build/browse.
+- Preview/export share a versioned render; obsolete styles cannot overwrite the latest canvas. Covers, picks and toggles invalidate exports. Cancelled native shares do not display a failure alert.
+- Restored date/console/birthday views record subsequent user selections correctly.
+- All 27 Node tests pass. Controlled Edge browser checks covered staged loading, sharing races, real PNG/JPG exports, and Back/Forward/refresh for all three browse tools.
+- `remotion-birthday` was abandoned and is excluded from maintenance and Git tracking. The main site's Birthday List remains active.
+- See HEALTH-CHECK.md for review findings and validation details. Outstanding items include edition-aware fallback covers and bounded sharing-image fetches.
